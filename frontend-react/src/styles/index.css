@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+  
+  body {
+    @apply bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100;
+    @apply font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800 rounded;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded hover:bg-gray-400 dark:hover:bg-gray-500;
+  }
+  
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-md;
+    @apply border border-white/20 dark:border-slate-700/20;
+  }
+  
+  /* Card style */
+  .card {
+    @apply bg-white dark:bg-slate-800 rounded-lg shadow-md;
+    @apply border border-slate-200 dark:border-slate-700;
+    @apply transition-shadow hover:shadow-lg;
+  }
+  
+  /* Button base */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white;
+    @apply focus:ring-primary-500;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-600 hover:bg-secondary-700 text-white;
+    @apply focus:ring-secondary-500;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary-600 text-primary-600;
+    @apply hover:bg-primary-50 dark:hover:bg-primary-900/20;
+  }
+  
+  /* Input style */
+  .input {
+    @apply w-full px-4 py-2 rounded-lg;
+    @apply bg-white dark:bg-slate-800;
+    @apply border border-slate-300 dark:border-slate-600;
+    @apply focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply transition-all;
+  }
+  
+  /* Label style */
+  .label {
+    @apply block text-sm font-medium mb-1;
+    @apply text-slate-700 dark:text-slate-300;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-secondary-600;
+    @apply bg-clip-text text-transparent;
+  }
+  
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-700;
+  }
+  
+  .bg-gradient-secondary {
+    @apply bg-gradient-to-r from-secondary-600 to-secondary-700;
+  }
+}
