@@ -20,7 +20,7 @@ jobs:
             cd /var/www/vidhilikhit/code
             git pull origin main
 
-            cd backend
+            cd backend-nodejs
             npm install
             pm2 restart vidhilikhit-backend
 
