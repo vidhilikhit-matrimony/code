@@ -196,10 +196,10 @@ const ProfileDetail = () => {
         : null;
 
     return (
-        <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
+        <div className="h-[100dvh] bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
             {/* Top Navigation */}
             <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex-none z-30">
-                <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
                     <button
                         onClick={() => navigate('/profiles')}
                         className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-primary-600 transition-colors font-medium"
@@ -208,7 +208,7 @@ const ProfileDetail = () => {
                         <span className="hidden sm:inline">Back to Profiles</span>
                     </button>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                         <div className="flex items-center gap-2">
                             <span className="text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full font-semibold">
                                 {profile.profileCode}
@@ -239,7 +239,7 @@ const ProfileDetail = () => {
 
                         <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
-                        <div className="hidden sm:flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             {user?.photoUrl ? (
                                 <img
                                     src={user.photoUrl}
@@ -272,8 +272,8 @@ const ProfileDetail = () => {
                 </div>
             </div>
 
-            {/* Main Content — fixed height, no page scroll on desktop */}
-            <div className="w-full max-w-6xl mx-auto px-4 py-6 lg:py-0 flex-1 lg:overflow-hidden min-h-0">
+            {/* Main Content — scrollable on mobile, fixed h/overflow-hidden on desktop */}
+            <div className="w-full max-w-6xl mx-auto px-4 py-6 lg:py-0 flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 lg:h-full">
 
                     {/* ─── Left: Photo Gallery ─── */}
@@ -351,24 +351,24 @@ const ProfileDetail = () => {
                             {/* MY PROFILE DASHBOARD - Only visible for own profile */}
                             {user && profile.userId === user.id && (
                                 <div className="mb-6">
-                                    <div className="flex items-center justify-between mb-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
                                         <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">
                                             My Profile
                                         </h2>
-                                        <div className="flex gap-3">
+                                        <div className="flex flex-wrap gap-2 sm:gap-3">
                                             <button
                                                 onClick={() => navigate('/create-profile')} // Assuming create-profile handles edit/update logic based on existence
-                                                className="btn bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2 px-4 py-2 text-sm"
+                                                className="btn bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2 px-3 py-2 text-sm"
                                             >
-                                                <Edit3 className="w-4 h-4" /> Edit Profile
+                                                <Edit3 className="w-4 h-4" /> Edit
                                             </button>
                                             <button
                                                 onClick={handleDelete}
                                                 disabled={isDeleting}
-                                                className="btn bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 px-4 py-2 text-sm disabled:opacity-50"
+                                                className="btn bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 px-3 py-2 text-sm disabled:opacity-50"
                                             >
                                                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                                                Delete Profile
+                                                Delete
                                             </button>
                                         </div>
                                     </div>
