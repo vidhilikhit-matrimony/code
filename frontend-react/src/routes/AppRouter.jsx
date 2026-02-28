@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { getCurrentUser } from '../services/authService';
+import { updateUser } from '../redux/slices/authSlice';
 
 // Pages
 import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import ForgotPassword from '../pages/ForgotPassword';
 import Profiles from '../pages/Profiles';
 import ProfileDetail from '../pages/ProfileDetail';
 import CreateProfile from '../pages/CreateProfile';
@@ -51,6 +54,40 @@ export const PublicRoute = ({ children }) => {
 };
 
 const AppRouter = () => {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const fetchCurrentUserData = async () => {
+        try {
+          const response = await getCurrentUser();
+          if (response?.success && response?.data?.user) {
+            dispatch(updateUser(response.data.user));
+          }
+        } catch (error) {
+          console.error("Failed to sync latest user data:", error);
+        }
+      };
+
+      // 1. Fetch immediately on mount
+      fetchCurrentUserData();
+
+      // 2. Poll every 30 seconds to catch background admin approvals
+      const intervalId = setInterval(fetchCurrentUserData, 30000);
+
+      // 3. Fetch immediately when the user switches back to this tab
+      const handleFocus = () => fetchCurrentUserData();
+      window.addEventListener('focus', handleFocus);
+
+      // Cleanup listeners
+      return () => {
+        clearInterval(intervalId);
+        window.removeEventListener('focus', handleFocus);
+      };
+    }
+  }, [dispatch, isAuthenticated]);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -71,6 +108,14 @@ const AppRouter = () => {
           element={
             <PublicRoute>
               <Register />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPassword />
             </PublicRoute>
           }
         />

@@ -159,6 +159,12 @@ const Register = () => {
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
+                            <p className={`text-xs mt-2 flex items-center transition-colors ${formData.password.length >= 8 ? 'text-green-600 dark:text-green-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
+                                <span className={`inline-flex items-center justify-center w-4 h-4 mr-1.5 rounded-full text-[10px] transition-colors ${formData.password.length >= 8 ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-200 text-transparent dark:bg-slate-700'}`}>
+                                    ✓
+                                </span>
+                                Password must be at least 8 characters
+                            </p>
                         </div>
 
                         <div>

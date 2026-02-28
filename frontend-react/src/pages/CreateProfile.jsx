@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
     User, Calendar, Ruler, Heart, BookOpen, Briefcase, MapPin,
     Users, Phone, FileText, Camera, ChevronRight, ChevronLeft, Check, Loader2
 } from 'lucide-react';
 import { createProfile, getMyProfile } from '../services/profileService';
+import RefreshPageButton from '../components/common/RefreshPageButton';
+import CustomSelect from '../components/common/CustomSelect';
 
 // ─── Step Definitions ───────────────────────────────────────────
 const STEPS = [
@@ -17,7 +19,9 @@ const STEPS = [
 ];
 
 const INITIAL_FORM = {
-    firstName: '', lastName: '', dateOfBirth: '', gender: '', height: '', maritalStatus: '',
+    firstName: '', lastName: '', dateOfBirth: '', gender: '', height: '',
+    birthPlace: '', foodStyle: '',
+    maritalStatus: '',
     caste: '', subCaste: '', gotra: '', rashi: '', nakshatra: '', nadi: '', timeOfBirth: '',
     education: '', occupation: '', annualIncome: '', assets: '',
     fatherName: '', motherName: '', brother: '', sister: '', profileFor: '',
@@ -86,18 +90,14 @@ const FormField = ({ label, name, type = 'text', value, onChange, required, opti
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         {type === 'select' ? (
-            <select
-                id={name}
+            <CustomSelect
                 name={name}
                 value={value}
                 onChange={onChange}
-                className="input"
-            >
-                <option value="">Select {label}</option>
-                {options.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-            </select>
+                options={options}
+                placeholder={`Select ${label}`}
+                required={required}
+            />
         ) : type === 'textarea' ? (
             <textarea
                 id={name}
@@ -107,6 +107,7 @@ const FormField = ({ label, name, type = 'text', value, onChange, required, opti
                 placeholder={placeholder}
                 rows={3}
                 className="input resize-none"
+                required={required}
             />
         ) : (
             <input
@@ -117,19 +118,26 @@ const FormField = ({ label, name, type = 'text', value, onChange, required, opti
                 onChange={onChange}
                 placeholder={placeholder}
                 className="input"
+                required={required}
             />
         )}
     </div>
 );
 
 /** Dropdown that reveals a free-text input when "Other" is selected */
-const DropdownWithOther = ({ label, name, options, value, isOther, onSelect, onOtherChange, placeholder = '' }) => (
+const DropdownWithOther = ({ label, name, options, value, isOther, onSelect, onOtherChange, placeholder = '', required }) => (
     <div className="space-y-1.5">
-        <label htmlFor={name} className="label">{label}</label>
-        <select id={name} value={isOther ? 'Other' : value} onChange={onSelect} className="input">
-            <option value="">Select {label}</option>
-            {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
+        <label htmlFor={name} className="label flex items-center gap-1.5">
+            {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        <CustomSelect
+            name={name}
+            value={isOther ? 'Other' : value}
+            onChange={onSelect}
+            options={options}
+            placeholder={`Select ${label}`}
+            required={required}
+        />
         {isOther && (
             <input
                 type="text"
@@ -137,6 +145,7 @@ const DropdownWithOther = ({ label, name, options, value, isOther, onSelect, onO
                 value={value}
                 onChange={onOtherChange}
                 className="input mt-2"
+                required={required}
             />
         )}
     </div>
@@ -178,6 +187,10 @@ const StepProgress = ({ currentStep }) => (
 // ─── Main Component ─────────────────────────────────────────────
 const CreateProfile = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const adminUserId = queryParams.get('adminUserId');
+
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState(INITIAL_FORM);
     const [photoFile, setPhotoFile] = useState(null);
@@ -195,7 +208,7 @@ const CreateProfile = () => {
     useEffect(() => {
         const fetchExistingProfile = async () => {
             try {
-                const response = await getMyProfile();
+                const response = await getMyProfile(adminUserId);
                 if (response.success && response.data) {
                     const p = response.data;
                     setIsEditMode(true);
@@ -220,6 +233,8 @@ const CreateProfile = () => {
                         lastName: p.lastName || '',
                         dateOfBirth: dob,
                         gender: gender,
+                        birthPlace: p.birthPlace || '',
+                        foodStyle: p.foodStyle || '',
                         height: p.height || '',
                         maritalStatus: p.maritalStatus || '',
                         caste: p.caste || '',
@@ -368,12 +383,17 @@ const CreateProfile = () => {
     };
 
     const validateStep = () => {
-        if (step === 1) {
-            if (!formData.firstName.trim()) { toast.error('Please enter your first name'); return false; }
-            if (!formData.lastName.trim()) { toast.error('Please enter your last name'); return false; }
-            if (!formData.dateOfBirth) { toast.error('Please enter date of birth'); return false; }
-            if (!formData.gender) { toast.error('Please select gender'); return false; }
+        const form = document.getElementById('profile-form');
+        if (form && !form.checkValidity()) {
+            form.reportValidity();
+            return false;
         }
+
+        if (step === 5 && !isEditMode && !photoPreview && !photoFile) {
+            toast.error('Profile photo is mandatory');
+            return false;
+        }
+
         return true;
     };
 
@@ -385,7 +405,8 @@ const CreateProfile = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await createProfile(formData, photoFile, galleryFiles);
+            const submitData = adminUserId ? { ...formData, adminUserId } : formData;
+            const response = await createProfile(submitData, photoFile, galleryFiles);
             if (response.success) {
                 toast.success(isEditMode ? 'Profile updated successfully! ✨' : 'Profile created successfully! 🎉');
                 navigate('/profiles');
@@ -419,17 +440,25 @@ const CreateProfile = () => {
                     <FormField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required icon={User} placeholder="Enter your first name" />
                     <FormField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required icon={User} placeholder="Enter your last name" />
                     <FormField label="Date of Birth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} required icon={Calendar} />
+                    <FormField label="Birthplace" name="birthPlace" value={formData.birthPlace} onChange={handleChange} required icon={MapPin} placeholder="City, State" />
                     <FormField label="Gender" name="gender" type="select" value={formData.gender} onChange={handleChange} required icon={User}
                         options={[{ value: 'm', label: 'Male' }, { value: 'f', label: 'Female' }]} />
-                    <FormField label="Height" name="height" value={formData.height} onChange={handleChange} icon={Ruler} placeholder="e.g. 5'8&quot;" />
-                    <FormField label="Marital Status" name="maritalStatus" type="select" value={formData.maritalStatus} onChange={handleChange} icon={Heart}
+                    <FormField label="Height" name="height" value={formData.height} onChange={handleChange} required icon={Ruler} placeholder="e.g. 5'8&quot;" />
+                    <FormField label="Food Style" name="foodStyle" type="select" value={formData.foodStyle} onChange={handleChange} required icon={Heart}
+                        options={[
+                            { value: 'vegetarian', label: 'Vegetarian' },
+                            { value: 'non_vegetarian', label: 'Non-Vegetarian' },
+                            { value: 'eggetarian', label: 'Eggetarian' },
+                            { value: 'vegan', label: 'Vegan' }
+                        ]} />
+                    <FormField label="Marital Status" name="maritalStatus" type="select" value={formData.maritalStatus} onChange={handleChange} required icon={Heart}
                         options={[
                             { value: 'unmarried', label: 'Unmarried' },
                             { value: 'divorced', label: 'Divorced' },
                             { value: 'widow', label: 'Widow' },
                             { value: 'widower', label: 'Widower' }
                         ]} />
-                    <FormField label="Profile For" name="profileFor" type="select" value={formData.profileFor} onChange={handleChange} icon={Users}
+                    <FormField label="Profile For" name="profileFor" type="select" value={formData.profileFor} onChange={handleChange} required icon={Users}
                         options={[
                             { value: 'self', label: 'Self' },
                             { value: 'son', label: 'Son' },
@@ -445,37 +474,34 @@ const CreateProfile = () => {
                     <div className="space-y-1.5">
                         <label htmlFor="caste" className="label flex items-center gap-1.5">
                             <Heart className="w-3.5 h-3.5 text-primary-500" />
-                            Caste
+                            Caste <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            id="caste"
+                        <CustomSelect
                             name="caste"
                             value={formData.caste}
                             onChange={handleChange}
-                            className="input"
-                        >
-                            <option value="">Select Caste</option>
-                            <option value="Brahmin">Brahmin</option>
-                            <option value="Lingayat">Lingayat</option>
-                        </select>
+                            options={[
+                                { value: 'Brahmin', label: 'Brahmin' },
+                                { value: 'Lingayat', label: 'Lingayat' }
+                            ]}
+                            placeholder="Select Caste"
+                            required
+                        />
                     </div>
 
                     {/* Sub-Caste Dropdown (depends on caste) */}
                     <div className="space-y-1.5">
-                        <label htmlFor="subCaste" className="label">Sub-Caste</label>
+                        <label htmlFor="subCaste" className="label">Sub-Caste <span className="text-red-500">*</span></label>
                         {formData.caste && SUB_CASTES[formData.caste] ? (
                             <>
-                                <select
-                                    id="subCaste"
+                                <CustomSelect
+                                    name="subCaste"
                                     value={othersMap.subCaste ? 'Other' : formData.subCaste}
                                     onChange={makeDropdownHandler('subCaste')}
-                                    className="input"
-                                >
-                                    <option value="">Select Sub-Caste</option>
-                                    {SUB_CASTES[formData.caste].map(sc => (
-                                        <option key={sc} value={sc}>{sc}</option>
-                                    ))}
-                                </select>
+                                    options={SUB_CASTES[formData.caste]}
+                                    placeholder="Select Sub-Caste"
+                                    required
+                                />
                                 {othersMap.subCaste && (
                                     <input
                                         type="text"
@@ -483,6 +509,7 @@ const CreateProfile = () => {
                                         value={formData.subCaste}
                                         onChange={makeOtherInputHandler('subCaste')}
                                         className="input mt-2"
+                                        required
                                     />
                                 )}
                             </>
@@ -496,6 +523,7 @@ const CreateProfile = () => {
                                 placeholder={formData.caste ? 'Enter sub-caste' : 'Select a caste first'}
                                 disabled={!formData.caste}
                                 className="input disabled:opacity-50 disabled:cursor-not-allowed"
+                                required
                             />
                         )}
                     </div>
@@ -508,6 +536,7 @@ const CreateProfile = () => {
                         onSelect={makeDropdownHandler('gotra')}
                         onOtherChange={makeOtherInputHandler('gotra')}
                         placeholder="Enter your gotra"
+                        required={formData.caste !== 'Lingayat'}
                     />
                     <DropdownWithOther
                         label="Rashi" name="rashi"
@@ -517,6 +546,7 @@ const CreateProfile = () => {
                         onSelect={makeDropdownHandler('rashi')}
                         onOtherChange={makeOtherInputHandler('rashi')}
                         placeholder="Enter your rashi"
+                        required={formData.caste !== 'Lingayat'}
                     />
                     <DropdownWithOther
                         label="Nakshatra" name="nakshatra"
@@ -526,6 +556,7 @@ const CreateProfile = () => {
                         onSelect={makeDropdownHandler('nakshatra')}
                         onOtherChange={makeOtherInputHandler('nakshatra')}
                         placeholder="Enter your nakshatra"
+                        required={formData.caste !== 'Lingayat'}
                     />
                     <DropdownWithOther
                         label="Nadi" name="nadi"
@@ -535,31 +566,32 @@ const CreateProfile = () => {
                         onSelect={makeDropdownHandler('nadi')}
                         onOtherChange={makeOtherInputHandler('nadi')}
                         placeholder="Enter your nadi"
+                        required={formData.caste !== 'Lingayat'}
                     />
-                    <FormField label="Time of Birth" name="timeOfBirth" type="time" value={formData.timeOfBirth} onChange={handleChange} icon={Calendar} />
+                    <FormField label="Time of Birth" name="timeOfBirth" type="time" value={formData.timeOfBirth} onChange={handleChange} required icon={Calendar} />
                 </div>
             );
             case 3: return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <FormField label="Education" name="education" value={formData.education} onChange={handleChange} icon={BookOpen} placeholder="e.g. B.E. Computer Science" />
-                    <FormField label="Occupation" name="occupation" value={formData.occupation} onChange={handleChange} icon={Briefcase} placeholder="e.g. Software Engineer" />
-                    <FormField label="Annual Income" name="annualIncome" value={formData.annualIncome} onChange={handleChange} placeholder="e.g. ₹5,00,000" />
-                    <FormField label="Assets" name="assets" value={formData.assets} onChange={handleChange} placeholder="e.g. House, Car" />
+                    <FormField label="Education" name="education" value={formData.education} onChange={handleChange} required icon={BookOpen} placeholder="e.g. B.E. Computer Science" />
+                    <FormField label="Occupation" name="occupation" value={formData.occupation} onChange={handleChange} required icon={Briefcase} placeholder="e.g. Software Engineer" />
+                    <FormField label="Annual Income" name="annualIncome" value={formData.annualIncome} onChange={handleChange} required placeholder="e.g. ₹5,00,000" />
+                    <FormField label="Assets" name="assets" value={formData.assets} onChange={handleChange} required placeholder="e.g. House, Car" />
                 </div>
             );
             case 4: return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <FormField label="Father's Name" name="fatherName" value={formData.fatherName} onChange={handleChange} icon={User} placeholder="Father's full name" />
-                    <FormField label="Mother's Name" name="motherName" value={formData.motherName} onChange={handleChange} icon={User} placeholder="Mother's full name" />
-                    <FormField label="Brothers" name="brother" value={formData.brother} onChange={handleChange} placeholder="e.g. 1 (married)" />
-                    <FormField label="Sisters" name="sister" value={formData.sister} onChange={handleChange} placeholder="e.g. 2 (1 married)" />
+                    <FormField label="Father's Name" name="fatherName" value={formData.fatherName} onChange={handleChange} required icon={User} placeholder="Father's full name" />
+                    <FormField label="Mother's Name" name="motherName" value={formData.motherName} onChange={handleChange} required icon={User} placeholder="Mother's full name" />
+                    <FormField label="Brothers" name="brother" value={formData.brother} onChange={handleChange} required placeholder="e.g. 1 (married)" />
+                    <FormField label="Sisters" name="sister" value={formData.sister} onChange={handleChange} required placeholder="e.g. 2 (1 married)" />
                 </div>
             );
             case 5: return (
                 <div className="space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <FormField label="Current Location" name="currentLocation" value={formData.currentLocation} onChange={handleChange} icon={MapPin} placeholder="e.g. Bangalore, Karnataka" />
-                        <FormField label="Work Location" name="workingPlace" value={formData.workingPlace} onChange={handleChange} icon={MapPin} placeholder="e.g. Bengaluru, Dubai" />
+                        <FormField label="Current Location" name="currentLocation" value={formData.currentLocation} onChange={handleChange} required icon={MapPin} placeholder="e.g. Bangalore, Karnataka" />
+                        <FormField label="Work Location" name="workingPlace" value={formData.workingPlace} onChange={handleChange} required icon={MapPin} placeholder="e.g. Bengaluru, Dubai" />
                         <DropdownWithOther
                             label="Country"
                             name="country"
@@ -569,18 +601,19 @@ const CreateProfile = () => {
                             onSelect={makeDropdownHandler('country')}
                             onOtherChange={makeOtherInputHandler('country')}
                             placeholder="Enter country name"
+                            required
                         />
-                        <FormField label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleChange} icon={Phone} placeholder="+91 1234567890" />
-                        <FormField label="Sender's Info" name="sendersInfo" value={formData.sendersInfo} onChange={handleChange} placeholder="Who is sending this profile" />
+                        <FormField label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleChange} required icon={Phone} placeholder="+91 1234567890" />
+                        <FormField label="Sender's Info" name="sendersInfo" value={formData.sendersInfo} onChange={handleChange} required placeholder="Who is sending this profile" />
                     </div>
-                    <FormField label="Postal Address" name="postalAddress" type="textarea" value={formData.postalAddress} onChange={handleChange} icon={MapPin} placeholder="Full postal address" />
-                    <FormField label="Expectations" name="expectations" type="textarea" value={formData.expectations} onChange={handleChange} icon={FileText} placeholder="What are you looking for in a partner?" />
+                    <FormField label="Postal Address" name="postalAddress" type="textarea" value={formData.postalAddress} onChange={handleChange} required icon={MapPin} placeholder="Full postal address" />
+                    <FormField label="Expectations" name="expectations" type="textarea" value={formData.expectations} onChange={handleChange} required icon={FileText} placeholder="What are you looking for in a partner?" />
 
                     {/* Photo Upload */}
                     <div className="space-y-2">
                         <label className="label flex items-center gap-1.5">
                             <Camera className="w-3.5 h-3.5 text-primary-500" />
-                            Profile Photo
+                            Profile Photo <span className="text-red-500">*</span>
                         </label>
                         <div className="flex items-center gap-4">
                             {photoPreview ? (
@@ -654,13 +687,16 @@ const CreateProfile = () => {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
             <div className="max-w-3xl mx-auto">
                 {/* Header */}
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gradient mb-2">
+                <div className="relative text-center mb-8">
+                    <h1 className="text-3xl font-bold text-gradient mb-2 pr-10">
                         {isEditMode ? 'Edit Your Profile' : 'Create Your Profile'}
                     </h1>
-                    <p className="text-slate-500">
+                    <p className="text-slate-500 pr-10">
                         {isEditMode ? 'Update your details to keep your profile fresh' : 'Fill in your details to find your perfect match'}
                     </p>
+                    <div className="absolute right-0 top-0">
+                        <RefreshPageButton />
+                    </div>
                 </div>
 
                 {/* Step Progress */}
@@ -673,7 +709,9 @@ const CreateProfile = () => {
                         {STEPS[step - 1].title} Details
                     </h2>
 
-                    {renderStep()}
+                    <form id="profile-form" onSubmit={(e) => e.preventDefault()}>
+                        {renderStep()}
+                    </form>
 
                     {/* Navigation Buttons */}
                     <div className="flex justify-between mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">

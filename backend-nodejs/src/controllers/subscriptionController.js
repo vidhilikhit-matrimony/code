@@ -105,6 +105,37 @@ const getPendingPayments = async (req, res, next) => {
 };
 
 /**
+ * Get recent approved payments (Admin)
+ * GET /api/subscriptions/admin/recent-approved
+ */
+const getRecentApprovedPayments = async (req, res, next) => {
+    try {
+        const payments = await SubscriptionPayment.find({ status: 'approved' })
+            .populate('userId', 'username email profileCode')
+            .sort({ processedAt: -1, requestedAt: -1 })
+            .limit(5);
+
+        // Generate presigned URLs for screenshots
+        const paymentsWithSignedUrls = await Promise.all(
+            payments.map(async (payment) => {
+                const paymentObj = payment.toObject();
+                if (paymentObj.screenshotUrl) {
+                    paymentObj.screenshotUrl = await getPresignedUrl(paymentObj.screenshotUrl);
+                }
+                return paymentObj;
+            })
+        );
+
+        res.json({
+            success: true,
+            data: paymentsWithSignedUrls
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
  * Verify payment (Admin)
  * POST /api/subscriptions/admin/verify/:id
  */
@@ -214,5 +245,6 @@ const verifyPayment = async (req, res, next) => {
 module.exports = {
     submitPayment,
     getPendingPayments,
+    getRecentApprovedPayments,
     verifyPayment
 };

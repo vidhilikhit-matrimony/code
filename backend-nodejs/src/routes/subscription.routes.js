@@ -6,6 +6,7 @@ const { upload } = require('../services/uploadService');
 const {
     submitPayment,
     getPendingPayments,
+    getRecentApprovedPayments,
     verifyPayment
 } = require('../controllers/subscriptionController');
 
@@ -18,6 +19,9 @@ router.post('/payment', upload.single('screenshot'), submitPayment);
 // Admin Routes
 // GET /api/subscriptions/admin/pending - Get pending payments
 router.get('/admin/pending', isAdmin, getPendingPayments);
+
+// GET /api/subscriptions/admin/recent-approved - Get recent approved payments
+router.get('/admin/recent-approved', isAdmin, getRecentApprovedPayments);
 
 // POST /api/subscriptions/admin/verify/:id - Verify payment
 router.post('/admin/verify/:id', isAdmin, verifyPayment);

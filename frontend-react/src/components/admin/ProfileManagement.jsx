@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle, UserPlus, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import CustomSelect from '../common/CustomSelect';
 
 const ProfileManagement = () => {
     const [profiles, setProfiles] = useState([]);
@@ -12,6 +13,13 @@ const ProfileManagement = () => {
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all'); // all, published, unpublished
     const [deleteLoading, setDeleteLoading] = useState(null);
+    const [editingUnlocks, setEditingUnlocks] = useState(null); // { id: profileId, value: number, subId: subscriptionId }
+    const [updateLoading, setUpdateLoading] = useState(false);
+
+    const navigate = useNavigate();
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [eligibleUsers, setEligibleUsers] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
 
     useEffect(() => {
         fetchProfiles();
@@ -60,6 +68,36 @@ const ProfileManagement = () => {
         }
     };
 
+    const handleUpdateUnlocks = async (profileId, subscriptionId) => {
+        if (!subscriptionId) {
+            toast.error('User does not have an active subscription');
+            setEditingUnlocks(null);
+            return;
+        }
+
+        setUpdateLoading(true);
+        try {
+            const response = await api.put(`/admin/subscriptions/${subscriptionId}/unlocks`, {
+                unlocksLeft: parseInt(editingUnlocks.value) || 0
+            });
+
+            if (response.success) {
+                toast.success('Unlocks updated successfully');
+                setProfiles(profiles.map(p =>
+                    p._id === profileId
+                        ? { ...p, unlocksLeft: parseInt(editingUnlocks.value) || 0 }
+                        : p
+                ));
+            }
+        } catch (error) {
+            console.error('Error updating unlocks:', error);
+            toast.error('Failed to update unlocks');
+        } finally {
+            setUpdateLoading(false);
+            setEditingUnlocks(null);
+        }
+    };
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -68,22 +106,63 @@ const ProfileManagement = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
+    const handleOpenCreateModal = async () => {
+        setShowCreateModal(true);
+        setLoadingUsers(true);
+        try {
+            // Fetch all users to find those without profiles
+            // We'll use the existing /admin/users endpoint with a large limit
+            const response = await api.get('/admin/users?limit=1000');
+            if (response.success) {
+                // Filter out admins and users who already have profiles
+                // We'll approximate this by checking if the user._id exists in our current profiles list
+                // For a robust solution, the backend should return a hasProfile flag
+                // Since this might not be there, we'll just show all active users for now
+                // The backend create endpoint will handle if they already have one
+                const users = response.data.filter(u => u.isActive && u.role === 'user');
+                setEligibleUsers(users);
+            }
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            toast.error('Failed to load eligible users');
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
+
+    const handleSelectUserForProfile = (userId) => {
+        setShowCreateModal(false);
+        navigate(`/create-profile?adminUserId=${userId}`);
+    };
+
     return (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Header / Search / Filter */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Profile Management</h2>
+                <div className="flex items-center justify-between w-full md:w-auto gap-4">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Profile Management</h2>
+                    <button
+                        onClick={handleOpenCreateModal}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        <span className="hidden sm:inline">Create Profile</span>
+                    </button>
+                </div>
 
                 <div className="flex gap-3 w-full md:w-auto">
-                    <select
+                    <CustomSelect
+                        name="filterStatus"
                         value={filterStatus}
                         onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-                        className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
-                    >
-                        <option value="all">All Profiles</option>
-                        <option value="published">Published</option>
-                        <option value="unpublished">Unpublished</option>
-                    </select>
+                        options={[
+                            { value: 'all', label: 'All Profiles' },
+                            { value: 'published', label: 'Published' },
+                            { value: 'unpublished', label: 'Unpublished' }
+                        ]}
+                        placeholder="All Profiles"
+                        className="w-full md:w-48"
+                    />
 
                     <div className="relative w-full md:w-64">
                         <input
@@ -107,6 +186,7 @@ const ProfileManagement = () => {
                             <th className="px-6 py-3 font-semibold">Code</th>
                             <th className="px-6 py-3 font-semibold">Status</th>
                             <th className="px-6 py-3 font-semibold">Created By</th>
+                            <th className="px-6 py-3 font-semibold">Unlocks Left</th>
                             <th className="px-6 py-3 font-semibold text-right">Actions</th>
                         </tr>
                     </thead>
@@ -151,8 +231,8 @@ const ProfileManagement = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex gap-2">
                                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${profile.isPublished
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
                                                 }`}>
                                                 {profile.isPublished ? <CheckCircle className="w-3 h-3" /> : <Loader2 className="w-3 h-3" />}
                                                 {profile.isPublished ? 'Published' : 'Draft'}
@@ -167,6 +247,50 @@ const ProfileManagement = () => {
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-500">
                                         {profile.userId?.email || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {editingUnlocks?.id === profile._id ? (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={editingUnlocks.value}
+                                                    onChange={(e) => setEditingUnlocks({ ...editingUnlocks, value: e.target.value })}
+                                                    className="w-16 px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
+                                                />
+                                                <button
+                                                    onClick={() => handleUpdateUnlocks(profile._id, profile.subscriptionId)}
+                                                    disabled={updateLoading}
+                                                    className="p-1 min-w-[28px] text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded flex items-center justify-center transition-colors disabled:opacity-50"
+                                                >
+                                                    {updateLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-xs font-bold">Save</span>}
+                                                </button>
+                                                <button
+                                                    onClick={() => setEditingUnlocks(null)}
+                                                    disabled={updateLoading}
+                                                    className="p-1 min-w-[28px] text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center justify-center transition-colors disabled:opacity-50"
+                                                >
+                                                    <span className="text-xs font-bold">Cancel</span>
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <span className={`font-medium ${profile.hasSubscription ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`}>
+                                                    {profile.unlocksLeft}
+                                                </span>
+                                                {profile.hasSubscription && (
+                                                    <button
+                                                        onClick={() => setEditingUnlocks({ id: profile._id, value: profile.unlocksLeft, subId: profile.subscriptionId })}
+                                                        className="text-xs text-blue-500 hover:underline"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                )}
+                                                {!profile.hasSubscription && (
+                                                    <span className="text-xs text-slate-400">(No Sub)</span>
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-right flex justify-end gap-2">
                                         <Link
@@ -216,6 +340,49 @@ const ProfileManagement = () => {
                     >
                         <ChevronRight className="w-5 h-5 text-slate-500" />
                     </button>
+                </div>
+            )}
+
+            {/* Select User Modal for Profile Creation */}
+            {showCreateModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in flex flex-col max-h-[80vh]">
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Select User to Create Profile</h3>
+                            <button
+                                onClick={() => setShowCreateModal(false)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-4 overflow-y-auto overflow-x-hidden flex-1">
+                            {loadingUsers ? (
+                                <div className="flex justify-center py-8">
+                                    <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+                                </div>
+                            ) : eligibleUsers.length === 0 ? (
+                                <p className="text-center text-slate-500 py-4">No eligible users found.</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {eligibleUsers.map(user => (
+                                        <div key={user._id} className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                            <div>
+                                                <p className="font-medium text-slate-900 dark:text-white">{user.username}</p>
+                                                <p className="text-xs text-slate-500">{user.email}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleSelectUserForProfile(user._id)}
+                                                className="px-3 py-1.5 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-lg text-sm font-medium transition-colors"
+                                            >
+                                                Select
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

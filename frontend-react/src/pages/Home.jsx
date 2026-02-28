@@ -4,10 +4,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
     Heart, Users, Shield, Star, Phone, Mail, CheckCircle,
     FileDown, List, PhoneCall, LogOut, Edit3, ChevronRight,
-    MapPin, Award
+    MapPin, Award, LayoutDashboard
 } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
 import { getMyProfile, getAllProfiles } from '../services/profileService';
+import RefreshPageButton from '../components/common/RefreshPageButton';
 
 // ─── Animations (injected once) ─────────────────────────────────
 const STYLES = `
@@ -357,18 +358,48 @@ const Home = () => {
                 <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2
                                 bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg
                                 border-b border-white/30 shadow-sm">
-                    <span className="font-bold text-lg shimmer-text tracking-wide select-none">
+                    <button
+                        onClick={handleLogout}
+                        className="font-bold text-lg shimmer-text tracking-wide focus:outline-none"
+                    >
                         VidhiLikhit
-                    </span>
+                    </button>
                     <div className="flex items-center gap-3">
-                        <div
-                            className="hidden sm:flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                                       bg-rose-50 text-rose-600 border border-rose-200 cursor-pointer"
-                            onClick={() => navigate('/profiles')}
-                        >
-                            <Star className="w-3 h-3 mr-1" />
-                            {user?.remainingViews || 0} Unlocks Left
-                        </div>
+                        {!user?.isAdmin && (
+                            user?.subscriptionStatus === 'active' && user?.remainingViews > 0 ? (
+                                <div
+                                    className="hidden sm:flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                               bg-rose-50 text-rose-600 border border-rose-200 cursor-pointer"
+                                    onClick={() => navigate('/payment')}
+                                >
+                                    <Star className="w-3 h-3 mr-1" />
+                                    {user.remainingViews} Unlocks Left
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => navigate('/payment')}
+                                    className="hidden sm:flex items-center px-4 py-1.5 rounded-full text-xs font-bold
+                                               bg-gradient-to-r from-rose-500 to-orange-500 text-white
+                                               hover:from-rose-600 hover:to-orange-600 shadow-md transition-all hover:scale-105 active:scale-95"
+                                >
+                                    <Star className="w-3.5 h-3.5 mr-1" />
+                                    {user?.subscriptionStatus === 'active' && user?.remainingViews === 0 ? 'Renew Subscription' : 'Buy Subscription'}
+                                </button>
+                            )
+                        )}
+                        <RefreshPageButton />
+
+                        {user?.isAdmin && (
+                            <button
+                                onClick={() => navigate('/admin/dashboard')}
+                                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
+                                           bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100
+                                           transition-all shadow-sm"
+                            >
+                                <LayoutDashboard className="w-4 h-4" /> Admin Dashboard
+                            </button>
+                        )}
+
                         <div
                             className="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full
                                        bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700
@@ -445,12 +476,12 @@ const Home = () => {
                                                 <Edit3 className="w-5 h-5" /> Edit Profile
                                             </button>
                                             <button
-                                                onClick={() => navigate('/profiles')}
+                                                onClick={() => navigate('/login')}
                                                 className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base
                                                            border-2 border-rose-400 text-rose-600 dark:text-rose-400
                                                            hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
                                             >
-                                                Browse Profiles <ChevronRight className="w-5 h-5" />
+                                                Login <ChevronRight className="w-5 h-5" />
                                             </button>
                                         </>
                                     ) : (
@@ -466,12 +497,12 @@ const Home = () => {
                                                 <ChevronRight className="w-5 h-5" />
                                             </button>
                                             <button
-                                                onClick={() => navigate('/profiles')}
+                                                onClick={() => navigate('/login')}
                                                 className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base
                                                            border-2 border-rose-400 text-rose-600 dark:text-rose-400
                                                            hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
                                             >
-                                                Browse Profiles <ChevronRight className="w-5 h-5" />
+                                                Login <ChevronRight className="w-5 h-5" />
                                             </button>
                                         </>
                                     )}
@@ -847,11 +878,11 @@ const Home = () => {
                                 </p>
                                 <div className="flex flex-wrap justify-center gap-4 pt-4">
                                     <button
-                                        onClick={() => navigate(isAuthenticated ? (hasProfile ? '/profiles' : '/create-profile') : '/register')}
+                                        onClick={() => navigate(isAuthenticated ? (hasProfile ? '/profiles' : '/create-profile') : '/login')}
                                         className="px-10 py-4 rounded-xl font-bold text-rose-600 bg-white
                                                    hover:bg-rose-50 shadow-lg transition-all hover:scale-105 active:scale-95"
                                     >
-                                        {isAuthenticated ? 'Browse Profiles' : 'Register Free Today'}
+                                        {isAuthenticated ? 'Login' : 'Registration Free'}
                                     </button>
                                     {!isAuthenticated && (
                                         <button

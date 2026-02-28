@@ -186,6 +186,8 @@ const toFullProfile = async (profile) => {
         lastName: profile.lastName,
         dateOfBirth: profile.dateOfBirth,
         age: profile.age,
+        birthPlace: profile.birthPlace,
+        foodStyle: profile.foodStyle,
         height: profile.height,
         caste: profile.caste,
         subCaste: profile.subCaste,
@@ -229,7 +231,7 @@ const toFullProfile = async (profile) => {
  */
 const createOrUpdateProfile = async (req, res, next) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.role === 'admin' && req.body.adminUserId ? req.body.adminUserId : req.user._id;
         const data = req.body;
 
         // Validate required fields
@@ -268,6 +270,8 @@ const createOrUpdateProfile = async (req, res, next) => {
                 lastName: data.lastName,
                 dateOfBirth: new Date(data.dateOfBirth),
                 age,
+                birthPlace: data.birthPlace || profile.birthPlace,
+                foodStyle: data.foodStyle || profile.foodStyle,
                 height: data.height || profile.height,
                 caste: data.caste || profile.caste,
                 subCaste: data.subCaste || profile.subCaste,
@@ -308,6 +312,8 @@ const createOrUpdateProfile = async (req, res, next) => {
                 lastName: data.lastName,
                 dateOfBirth: new Date(data.dateOfBirth),
                 age,
+                birthPlace: data.birthPlace,
+                foodStyle: data.foodStyle,
                 height: data.height,
                 caste: data.caste,
                 subCaste: data.subCaste,
@@ -404,7 +410,9 @@ const createOrUpdateProfile = async (req, res, next) => {
  */
 const getMyProfile = async (req, res, next) => {
     try {
-        const profile = await Profile.findOne({ userId: req.user._id });
+        const userId = req.user.role === 'admin' && req.query.adminUserId ? req.query.adminUserId : req.user._id;
+
+        const profile = await Profile.findOne({ userId });
 
         if (!profile) {
             return res.status(404).json({
@@ -535,16 +543,17 @@ const getProfileById = async (req, res, next) => {
             });
         }
 
-        // Owner gets full profile + subscription info
-        if (isOwnProfile) {
-            const subscription = await Subscription.findOne({ userId: currentUserId });
+        // Owner or Admin gets full profile + target user subscription info
+        if (isOwnProfile || isAdmin) {
+            const subscription = await Subscription.findOne({ userId: profile.userId });
             const fullProfile = await toFullProfile(profile);
             return res.json({
                 success: true,
                 data: {
                     ...fullProfile,
                     subscriptionStatus: subscription ? subscription.status : 'inactive',
-                    subscriptionValidTo: subscription ? subscription.validTo : null
+                    subscriptionValidTo: subscription ? subscription.validTo : null,
+                    remainingViews: subscription ? subscription.remainingViews : 0
                 }
             });
         }

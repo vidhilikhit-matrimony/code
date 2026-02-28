@@ -5,10 +5,11 @@ import { toast } from 'sonner';
 import {
     ArrowLeft, Heart, MapPin, Briefcase, GraduationCap, Calendar, Ruler,
     Phone, Mail, Users, Star, Clock, Shield, Edit3, User, Loader2, Lock, LogOut,
-    ChevronLeft, ChevronRight, FileText, Download
+    ChevronLeft, ChevronRight, FileText, Download, LayoutDashboard
 } from 'lucide-react';
-import { logout } from '../redux/slices/authSlice';
+import { logout, updateUser } from '../redux/slices/authSlice';
 import { getProfileById, unlockProfile, deleteProfile } from '../services/profileService';
+import RefreshPageButton from '../components/common/RefreshPageButton';
 
 
 // ─── Detail Row Component ───────────────────────────────────────
@@ -70,11 +71,19 @@ const ProfileDetail = () => {
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleUnlock = async () => {
+        const confirmUnlock = window.confirm("Are you sure you want to unlock this profile? This will consume 1 view from your subscription.");
+        if (!confirmUnlock) return;
+
         try {
             const response = await unlockProfile(id);
             if (response.success) {
                 toast.success('Profile unlocked successfully!');
                 setProfile(response.data);
+
+                // Update the Redux store with the new remainingViews count
+                if (response.remainingViews !== undefined) {
+                    dispatch(updateUser({ remainingViews: response.remainingViews }));
+                }
             } else {
                 if (response.message?.toLowerCase().includes('upgrade') || response.message?.toLowerCase().includes('plan')) {
                     toast.error(response.message);
@@ -200,13 +209,26 @@ const ProfileDetail = () => {
             {/* Top Navigation */}
             <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex-none z-30">
                 <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
-                    <button
-                        onClick={() => navigate('/profiles')}
-                        className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-primary-600 transition-colors font-medium"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                        <span className="hidden sm:inline">Back to Profiles</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate('/profiles')}
+                            className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-primary-600 transition-colors font-medium"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                            <span className="hidden sm:inline">Back to Profiles</span>
+                        </button>
+
+                        {user?.isAdmin && (
+                            <button
+                                onClick={() => navigate('/admin/dashboard')}
+                                className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors font-medium ml-2 sm:ml-4 border-l border-slate-300 dark:border-slate-600 pl-3 sm:pl-5"
+                                title="Back to Admin Dashboard"
+                            >
+                                <LayoutDashboard className="w-5 h-5" />
+                                <span className="hidden sm:inline">Admin</span>
+                            </button>
+                        )}
+                    </div>
 
                     <div className="flex items-center gap-2 sm:gap-4">
                         <div className="flex items-center gap-2">
@@ -216,7 +238,7 @@ const ProfileDetail = () => {
                         </div>
 
                         {/* Download PDF Button - Visible to everyone who can unlock or owner/admin */}
-                        {(isUnlocked || (user && (profile.userId === user.id || user.role === 'admin'))) && (
+                        {(isUnlocked || (user && (profile.userId === user.id || user.isAdmin))) && (
                             <button
                                 onClick={handleDownloadPdf}
                                 disabled={isDownloading}
@@ -232,10 +254,17 @@ const ProfileDetail = () => {
                             </button>
                         )}
 
-                        <div className="hidden md:flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 text-xs font-medium text-slate-700 dark:text-slate-300">
-                            <span className="text-primary-600 dark:text-primary-400 font-bold mr-1">{user?.remainingViews || 0}</span> Unlocks Left
-                        </div>
+                        {user?.isAdmin ? (
+                            <div className="hidden md:flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 text-xs font-medium text-slate-700 dark:text-slate-300" title="This is how many unlocks this user has left">
+                                <span className="text-primary-600 dark:text-primary-400 font-bold mr-1">{profile?.remainingViews || 0}</span> User Unlocks Left
+                            </div>
+                        ) : (
+                            <div className="hidden md:flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 text-xs font-medium text-slate-700 dark:text-slate-300">
+                                <span className="text-primary-600 dark:text-primary-400 font-bold mr-1">{user?.remainingViews || 0}</span> Unlocks Left
+                            </div>
+                        )}
 
+                        <RefreshPageButton />
 
                         <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
@@ -440,9 +469,9 @@ const ProfileDetail = () => {
                                         <Heart className="w-3.5 h-3.5" /> {profile.maritalStatus}
                                     </span>
                                 )}
-                                {profile.currentLocation && (
+                                {profile.workingPlace && (
                                     <span className="inline-flex items-center gap-1.5 text-sm bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 px-3 py-1.5 rounded-full font-medium">
-                                        <MapPin className="w-3.5 h-3.5" /> {profile.currentLocation}
+                                        <MapPin className="w-3.5 h-3.5" /> {profile.workingPlace}
                                     </span>
                                 )}
                             </div>
@@ -454,6 +483,8 @@ const ProfileDetail = () => {
                                 {/* Personal Section */}
                                 <Section title="Personal Details">
                                     <DetailRow icon={Calendar} label="Date of Birth" value={dobDisplay} />
+                                    <DetailRow icon={MapPin} label="Birthplace" value={profile.birthPlace} />
+                                    <DetailRow icon={Heart} label="Food Style" value={profile.foodStyle} />
                                     <DetailRow icon={Ruler} label="Height" value={profile.height} />
                                     <DetailRow icon={Heart} label="Marital Status" value={profile.maritalStatus} />
                                     <DetailRow icon={Users} label="Profile For" value={profile.profileFor} />
