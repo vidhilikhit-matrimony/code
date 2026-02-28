@@ -5,6 +5,7 @@ import api from '../../services/api';
 
 const SubscriptionManagement = () => {
     const [payments, setPayments] = useState([]);
+    const [recentPayments, setRecentPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState(null);
     const [verifyModal, setVerifyModal] = useState(null); // { id, planViews, reject: boolean }
@@ -17,9 +18,16 @@ const SubscriptionManagement = () => {
 
     const fetchPayments = async () => {
         try {
-            const response = await api.get('/subscriptions/admin/pending');
-            if (response.success) {
-                setPayments(response.data);
+            const [pendingRes, recentRes] = await Promise.all([
+                api.get('/subscriptions/admin/pending'),
+                api.get('/subscriptions/admin/recent-approved')
+            ]);
+
+            if (pendingRes.success) {
+                setPayments(pendingRes.data);
+            }
+            if (recentRes.success) {
+                setRecentPayments(recentRes.data);
             }
         } catch (error) {
             console.error('Fetch payments error:', error);
@@ -65,89 +73,166 @@ const SubscriptionManagement = () => {
         );
     }
 
-    if (payments.length === 0) {
+    if (payments.length === 0 && recentPayments.length === 0) {
         return (
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center shadow-sm border border-slate-200 dark:border-slate-700">
                 <Check className="w-16 h-16 text-green-500 mx-auto mb-4 bg-green-50 dark:bg-green-900/20 rounded-full p-3" />
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">All Caught Up!</h3>
-                <p className="text-slate-500">No pending payment requests at the moment.</p>
+                <p className="text-slate-500">No pending or recent payment requests at the moment.</p>
             </div>
         );
     }
 
     return (
-        <>
-            <div className="grid gap-6">
-                {payments.map((payment) => (
-                    <div key={payment._id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col lg:flex-row gap-6">
-                        {/* Screenshot */}
-                        <div className="lg:w-1/4 flex-shrink-0">
-                            <div className="relative group cursor-pointer" onClick={() => window.open(payment.screenshotUrl, '_blank')}>
-                                <img
-                                    src={payment.screenshotUrl}
-                                    alt="Payment Screenshot"
-                                    className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
-                                />
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                                    <Eye className="w-6 h-6 text-white" />
-                                    <span className="text-white ml-2 font-medium">View Full</span>
+        <div className="space-y-12">
+            {/* Pending Payments Section */}
+            <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Pending Approvals</h2>
+                {payments.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 text-center shadow-sm border border-slate-200 dark:border-slate-700">
+                        <Check className="w-12 h-12 text-green-500 mx-auto mb-3 bg-green-50 dark:bg-green-900/20 rounded-full p-2" />
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">No pending requests</h3>
+                    </div>
+                ) : (
+                    <div className="grid gap-6">
+                        {payments.map((payment) => (
+                            <div key={payment._id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col lg:flex-row gap-6">
+                                {/* Screenshot */}
+                                <div className="lg:w-1/4 flex-shrink-0">
+                                    <div className="relative group cursor-pointer" onClick={() => window.open(payment.screenshotUrl, '_blank')}>
+                                        <img
+                                            src={payment.screenshotUrl}
+                                            alt="Payment Screenshot"
+                                            className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
+                                        />
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                                            <Eye className="w-6 h-6 text-white" />
+                                            <span className="text-white ml-2 font-medium">View Full</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* Details */}
-                        <div className="flex-1 space-y-4">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                                        {payment.userId?.username || 'Unknown User'}
-                                    </h3>
-                                    <p className="text-slate-500 text-sm">{payment.userId?.email}</p>
-                                    <p className="text-xs text-slate-400 font-mono mt-1">ID: {payment.userId?._id}</p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-2xl font-bold text-primary-600">₹{payment.amount}</div>
-                                    <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 capitalize mt-1">
-                                        {payment.planId} Plan
+                                {/* Details */}
+                                <div className="flex-1 space-y-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">
+                                                {payment.userId?.username || 'Unknown User'}
+                                            </h3>
+                                            <p className="text-slate-500 text-sm">{payment.userId?.email}</p>
+                                            <p className="text-xs text-slate-400 font-mono mt-1">ID: {payment.userId?._id}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-2xl font-bold text-primary-600">₹{payment.amount}</div>
+                                            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 capitalize mt-1">
+                                                {payment.planId} Plan
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
+                                        <div>
+                                            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Transaction ID</span>
+                                            <p className="text-slate-900 dark:text-slate-200 font-mono font-medium">{payment.transactionDetails}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Requested At</span>
+                                            <p className="text-slate-900 dark:text-slate-200 text-sm">
+                                                {new Date(payment.requestedAt).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-3 pt-2">
+                                        <button
+                                            onClick={() => setVerifyModal({ id: payment._id, planViews: payment.planViews })}
+                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <Check className="w-4 h-4" /> Approve
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm('Are you sure you want to reject this payment?')) {
+                                                    setVerifyModal({ id: payment._id, reject: true });
+                                                }
+                                            }}
+                                            className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-300 px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <X className="w-4 h-4" /> Reject
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
-                                <div>
-                                    <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Transaction ID</span>
-                                    <p className="text-slate-900 dark:text-slate-200 font-mono font-medium">{payment.transactionDetails}</p>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Requested At</span>
-                                    <p className="text-slate-900 dark:text-slate-200 text-sm">
-                                        {new Date(payment.requestedAt).toLocaleString()}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-3 pt-2">
-                                <button
-                                    onClick={() => setVerifyModal({ id: payment._id, planViews: payment.planViews })}
-                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Check className="w-4 h-4" /> Approve
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (window.confirm('Are you sure you want to reject this payment?')) {
-                                            setVerifyModal({ id: payment._id, reject: true });
-                                        }
-                                    }}
-                                    className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-300 px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <X className="w-4 h-4" /> Reject
-                                </button>
-                            </div>
-                        </div>
+                        ))}
                     </div>
-                ))}
+                )}
             </div>
+
+            {/* Recent Approved Payments Section */}
+            {recentPayments.length > 0 && (
+                <div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Recently Approved (Last 5)</h2>
+                    <div className="grid gap-6">
+                        {recentPayments.map((payment) => (
+                            <div key={payment._id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col lg:flex-row gap-6 opacity-75 hover:opacity-100 transition-opacity">
+                                {/* Screenshot */}
+                                <div className="lg:w-1/4 flex-shrink-0">
+                                    <div className="relative group cursor-pointer" onClick={() => window.open(payment.screenshotUrl, '_blank')}>
+                                        <img
+                                            src={payment.screenshotUrl}
+                                            alt="Payment Screenshot"
+                                            className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-700 grayscale group-hover:grayscale-0 transition-all"
+                                        />
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                                            <Eye className="w-6 h-6 text-white" />
+                                            <span className="text-white ml-2 font-medium">View Full</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Details */}
+                                <div className="flex-1 space-y-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">
+                                                {payment.userId?.username || 'Unknown User'}
+                                            </h3>
+                                            <p className="text-slate-500 text-sm">{payment.userId?.email}</p>
+                                            <p className="text-xs text-slate-400 font-mono mt-1">ID: {payment.userId?._id}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-2xl font-bold text-primary-600">₹{payment.amount}</div>
+                                            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 capitalize mt-1">
+                                                <Check className="w-3 h-3 mr-1" /> Approved
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
+                                        <div>
+                                            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Transaction ID</span>
+                                            <p className="text-slate-900 dark:text-slate-200 font-mono font-medium">{payment.transactionDetails}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Approved At</span>
+                                            <p className="text-slate-900 dark:text-slate-200 text-sm">
+                                                {new Date(payment.processedAt || payment.updatedAt).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {payment.adminNotes && (
+                                        <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                                            <span className="text-xs text-slate-500 font-semibold block mb-1">Admin Notes:</span>
+                                            <p className="text-sm text-slate-700 dark:text-slate-300">{payment.adminNotes}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Verification Modal */}
             {verifyModal && (
@@ -219,7 +304,7 @@ const SubscriptionManagement = () => {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 };
 

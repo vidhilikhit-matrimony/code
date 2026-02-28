@@ -56,7 +56,7 @@ const AdminStats = () => {
             textColor: 'text-green-600 dark:text-green-400'
         },
         {
-            title: 'Total Revenue',
+            title: 'Total Renew',
             value: `₹${stats.totalRevenue ? stats.totalRevenue.toLocaleString() : 0}`,
             icon: CreditCard,
             bgColor: 'bg-amber-50 dark:bg-amber-900/10',

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { QrCode, Upload, Check, Loader2, ArrowLeft, Shield } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { QrCode, Upload, Check, Loader2, ArrowLeft, Shield, AlertCircle } from 'lucide-react';
 import api from '../services/api';
 import qrCodeImg from '../assets/payment-qr.jpeg';
+import RefreshPageButton from '../components/common/RefreshPageButton';
 
 const PLANS = [
     { id: 'basic', name: 'Basic Plan', amount: 1000, views: 30, color: 'bg-blue-500' },
@@ -13,6 +15,7 @@ const PLANS = [
 
 const Payment = () => {
     const navigate = useNavigate();
+    const { user } = useSelector((state) => state.auth);
     const [selectedPlan, setSelectedPlan] = useState(PLANS[1].id); // Default to Standard
     const [transactionId, setTransactionId] = useState('');
     const [screenshot, setScreenshot] = useState(null);
@@ -72,20 +75,42 @@ const Payment = () => {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
-                <div className="mb-8 flex items-center gap-4">
-                    <button
-                        onClick={() => step === 1 ? navigate(-1) : setStep(1)}
-                        className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-                    >
-                        <ArrowLeft className="w-6 h-6 text-slate-600 dark:text-slate-400" />
-                    </button>
+                <div className="mb-8 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => step === 1 ? navigate(-1) : setStep(1)}
+                            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                        >
+                            <ArrowLeft className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                        </button>
+                        <div>
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+                                Unlock Profiles
+                            </h1>
+                            <p className="text-slate-500">Choose a plan to view full profile details</p>
+                        </div>
+                    </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                            Unlock Profiles
-                        </h1>
-                        <p className="text-slate-500">Choose a plan to view full profile details</p>
+                        <RefreshPageButton />
                     </div>
                 </div>
+
+                {!user?.hasProfile && (
+                    <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex gap-3 text-red-800 dark:text-red-200">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <h3 className="font-bold">Profile Required</h3>
+                            <p className="text-sm mt-1">Please create your profile before buying or renewing a subscription.</p>
+                            <p className="text-sm mt-1 font-semibold">Note: Until a profile is created, you cannot proceed to buy or renew a subscription.</p>
+                            <button
+                                onClick={() => navigate('/create-profile')}
+                                className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                            >
+                                Create Profile Now
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left Column: Plan Selection */}
@@ -148,7 +173,8 @@ const Payment = () => {
                                 </p>
                                 <button
                                     onClick={() => setStep(2)}
-                                    className="btn btn-primary w-full py-3 text-lg"
+                                    disabled={!user?.hasProfile}
+                                    className={`btn w-full py-3 text-lg ${user?.hasProfile ? 'btn-primary' : 'bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400'}`}
                                 >
                                     Proceed to Payment
                                 </button>

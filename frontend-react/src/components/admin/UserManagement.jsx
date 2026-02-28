@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Search, Lock, Unlock, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Lock, Unlock, Loader2, ChevronLeft, ChevronRight, Trash2, UserPlus, X } from 'lucide-react';
 import api from '../../services/api';
+import CustomSelect from '../common/CustomSelect';
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -10,6 +11,10 @@ const UserManagement = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
     const [actionLoading, setActionLoading] = useState(null);
+
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [createForm, setCreateForm] = useState({ username: '', email: '', password: '', role: 'user' });
+    const [createLoading, setCreateLoading] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -33,6 +38,25 @@ const UserManagement = () => {
             toast.error('Failed to fetch users');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        setCreateLoading(true);
+        try {
+            const response = await api.post('/admin/users', createForm);
+            if (response.success) {
+                toast.success('User created successfully');
+                setShowCreateModal(false);
+                setCreateForm({ username: '', email: '', password: '', role: 'user' });
+                fetchUsers(); // Refresh the list
+            }
+        } catch (error) {
+            console.error('Error creating user:', error);
+            toast.error(error.message || 'Failed to create user');
+        } finally {
+            setCreateLoading(false);
         }
     };
 
@@ -61,6 +85,27 @@ const UserManagement = () => {
         }
     };
 
+    const handleDeleteUser = async (user) => {
+        if (!window.confirm(`Are you absolutely sure you want to permanently delete the user "${user.username}"? This action cannot be undone and will delete all their profiles and data.`)) {
+            return;
+        }
+
+        setActionLoading(user._id);
+        try {
+            const response = await api.delete(`/admin/users/${user._id}`);
+            if (response.success) {
+                toast.success(response.message || 'User deleted successfully');
+                // Remove user from current table state
+                setUsers(users.filter(u => u._id !== user._id));
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            toast.error(error.message || 'Failed to delete user');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -73,7 +118,16 @@ const UserManagement = () => {
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Header / Search */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">User Management</h2>
+                <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">User Management</h2>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        <span className="hidden sm:inline">Create User</span>
+                    </button>
+                </div>
                 <div className="relative w-full sm:w-64">
                     <input
                         type="text"
@@ -122,16 +176,16 @@ const UserManagement = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${user.role === 'admin'
-                                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                             }`}>
                                             {user.role}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${user.isActive
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                                             }`}>
                                             {user.isActive ? 'Active' : 'Inactive'}
                                         </span>
@@ -140,23 +194,37 @@ const UserManagement = () => {
                                         {new Date(user.createdAt).toLocaleDateString()}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => handleToggleStatus(user._id, user.isActive)}
-                                            disabled={actionLoading === user._id || user.role === 'admin'}
-                                            className={`p-2 rounded-lg transition-colors ${user.isActive
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => handleToggleStatus(user._id, user.isActive)}
+                                                disabled={actionLoading === user._id || user.role === 'admin'}
+                                                className={`p-2 rounded-lg transition-colors ${user.isActive
                                                     ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
                                                     : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                                            title={user.isActive ? "Deactivate User" : "Activate User"}
-                                        >
-                                            {actionLoading === user._id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : user.isActive ? (
-                                                <Lock className="w-4 h-4" />
-                                            ) : (
-                                                <Unlock className="w-4 h-4" />
-                                            )}
-                                        </button>
+                                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                title={user.isActive ? "Deactivate User" : "Activate User"}
+                                            >
+                                                {actionLoading === user._id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : user.isActive ? (
+                                                    <Lock className="w-4 h-4" />
+                                                ) : (
+                                                    <Unlock className="w-4 h-4" />
+                                                )}
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteUser(user)}
+                                                disabled={actionLoading === user._id || user.role === 'admin'}
+                                                className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="Delete User"
+                                            >
+                                                {actionLoading === user._id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="w-4 h-4" />
+                                                )}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -186,8 +254,88 @@ const UserManagement = () => {
                         <ChevronRight className="w-5 h-5 text-slate-500" />
                     </button>
                 </div>
+            )
+            }
+
+            {/* Create User Modal */}
+            {showCreateModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in">
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Create New User</h3>
+                            <button
+                                onClick={() => setShowCreateModal(false)}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateUser} className="p-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Username</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={createForm.username}
+                                    onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={createForm.email}
+                                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                                <input
+                                    type="password"
+                                    required
+                                    minLength={8}
+                                    value={createForm.password}
+                                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role</label>
+                                <CustomSelect
+                                    name="role"
+                                    value={createForm.role}
+                                    onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
+                                    options={[
+                                        { value: 'user', label: 'User' },
+                                        { value: 'admin', label: 'Admin' }
+                                    ]}
+                                    placeholder="Select Role"
+                                />
+                            </div>
+                            <div className="pt-4 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreateModal(false)}
+                                    className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={createLoading}
+                                    className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex justify-center items-center"
+                                >
+                                    {createLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create User'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
-        </div>
+        </div >
     );
 };
 

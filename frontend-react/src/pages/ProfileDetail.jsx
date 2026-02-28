@@ -5,10 +5,12 @@ import { toast } from 'sonner';
 import {
     ArrowLeft, Heart, MapPin, Briefcase, GraduationCap, Calendar, Ruler,
     Phone, Mail, Users, Star, Clock, Shield, Edit3, User, Loader2, Lock, LogOut,
+    ChevronLeft, ChevronRight, FileText, Download, LayoutDashboard
     ChevronLeft, ChevronRight, FileText, Download, CheckCircle, AlertCircle, X
 } from 'lucide-react';
-import { logout } from '../redux/slices/authSlice';
+import { logout, updateUser } from '../redux/slices/authSlice';
 import { getProfileById, unlockProfile, deleteProfile } from '../services/profileService';
+import RefreshPageButton from '../components/common/RefreshPageButton';
 
 // ─── Detail Row Component ───────────────────────────────────────
 const DetailRow = ({ icon: Icon, label, value, iconColor = 'text-primary-500', className = '' }) => {
@@ -78,11 +80,19 @@ const ProfileDetail = () => {
     const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 
     const handleUnlock = async () => {
+        const confirmUnlock = window.confirm("Are you sure you want to unlock this profile? This will consume 1 view from your subscription.");
+        if (!confirmUnlock) return;
+
         try {
             const response = await unlockProfile(id);
             if (response.success) {
                 toast.success('Profile unlocked successfully!');
                 setProfile(response.data);
+
+                // Update the Redux store with the new remainingViews count
+                if (response.remainingViews !== undefined) {
+                    dispatch(updateUser({ remainingViews: response.remainingViews }));
+                }
             } else {
                 if (response.message?.toLowerCase().includes('upgrade') || response.message?.toLowerCase().includes('plan')) {
                     toast.error(response.message);

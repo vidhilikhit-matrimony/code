@@ -1,15 +1,28 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Shield, LayoutDashboard, Users, FileText, CreditCard, LogOut } from 'lucide-react';
+import { logout } from '../redux/slices/authSlice';
 import { Shield, LayoutDashboard, Users, FileText, CreditCard, FileDown } from 'lucide-react';
 import api from '../services/api';
 import AdminStats from '../components/admin/AdminStats';
 import UserManagement from '../components/admin/UserManagement';
 import ProfileManagement from '../components/admin/ProfileManagement';
+import SubscriptionManagement from '../components/admin/SubscriptionManagement'; // Extracted existing logic
+import RefreshPageButton from '../components/common/RefreshPageButton';
 import SubscriptionManagement from '../components/admin/SubscriptionManagement';
 import AdminReports from '../components/admin/AdminReports';
 
 const AdminDashboard = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('overview');
+
+    const handleLogout = () => {
+        dispatch(logout());
+        navigate('/');
+    };
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -23,13 +36,25 @@ const AdminDashboard = () => {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-                        <Shield className="w-8 h-8 text-primary-500" />
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                            <Shield className="w-8 h-8 text-primary-500" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+                            <p className="text-slate-500">Manage your application, users, and subscriptions</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
-                        <p className="text-slate-500">Manage your application, users, and subscriptions</p>
+                    <div className="flex items-center gap-3">
+                        <RefreshPageButton />
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-rose-600 dark:hover:text-rose-400 transition-colors shadow-sm font-medium"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span className="hidden sm:inline">Logout</span>
+                        </button>
                     </div>
                 </div>
 

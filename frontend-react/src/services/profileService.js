@@ -38,7 +38,10 @@ export const createProfile = async (profileData, photoFile, galleryPhotos = [], 
 /**
  * Get current user's profile
  */
-export const getMyProfile = async () => {
+export const getMyProfile = async (adminUserId = null) => {
+    if (adminUserId) {
+        return await api.get(`/profiles/me?adminUserId=${adminUserId}`);
+    }
     return await api.get('/profiles/me');
 };
 

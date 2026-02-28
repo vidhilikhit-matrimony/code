@@ -5,6 +5,7 @@ import { Search, SlidersHorizontal, X, MapPin, Briefcase, GraduationCap, Chevron
 import { getAllProfiles, getMyProfile } from '../services/profileService';
 import { logout } from '../redux/slices/authSlice';
 import { toast } from 'sonner';
+import RefreshPageButton from '../components/common/RefreshPageButton';
 
 // ─── Filter Config ─────────────────────────────────────────────
 const FILTER_CONFIG = {
@@ -62,7 +63,7 @@ const ProfileCard = ({ profile, onClick }) => {
     const profileCode = profile.profileCode || '';
     const caste = profile.caste || '';
     const education = profile.education || '';
-    const location = profile.currentLocation || '';
+    const location = profile.workingPlace || '';
     const maritalStatus = profile.maritalStatus || '';
 
     return (
@@ -392,6 +393,11 @@ const Profiles = () => {
 
     const activeFilterCount = Object.entries(filters).filter(([k, v]) => v && k !== 'search').length;
 
+    const handleLogout = () => {
+        dispatch(logout());
+        navigate('/');
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
             {/* Top Bar */}
@@ -399,7 +405,7 @@ const Profiles = () => {
                 <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => navigate('/')}
+                            onClick={handleLogout}
                             className="text-primary-600 hover:text-primary-700 font-bold text-xl"
                         >
                             VidhiLikhit
@@ -436,9 +442,23 @@ const Profiles = () => {
                             {hasProfile ? '✎ Edit Profile' : '+ Create Profile'}
                         </button>
 
-                        <div className="hidden md:flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 text-xs font-medium text-slate-700 dark:text-slate-300">
-                            <span className="text-primary-600 dark:text-primary-400 font-bold mr-1">{user?.remainingViews || 0}</span> Unlocks Left
-                        </div>
+                        {!user?.isAdmin && (
+                            user?.subscriptionStatus === 'active' && user?.remainingViews > 0 ? (
+                                <div className="hidden md:flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 text-xs font-medium text-slate-700 dark:text-slate-300">
+                                    <span className="text-primary-600 dark:text-primary-400 font-bold mr-1">{user.remainingViews}</span> Unlocks Left
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => navigate('/payment')}
+                                    className="hidden md:flex items-center px-4 py-1.5 rounded-full text-xs font-bold
+                                               bg-primary-600 text-white hover:bg-primary-700 shadow-sm transition-colors"
+                                >
+                                    {user?.subscriptionStatus === 'active' && user?.remainingViews === 0 ? 'Renew Subscription' : 'Buy Subscription'}
+                                </button>
+                            )
+                        )}
+
+                        <RefreshPageButton />
 
                         <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2 hidden sm:block"></div>
 

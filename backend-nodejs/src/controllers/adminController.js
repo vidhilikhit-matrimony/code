@@ -1,4 +1,4 @@
-const { User, Profile, Subscription } = require('../models');
+const { User, Profile, Subscription, SubscriptionPayment } = require('../models');
 
 /**
  * Get Dashboard Stats
@@ -16,11 +16,10 @@ const getDashboardStats = async (req, res, next) => {
             User.countDocuments({}),
             Profile.countDocuments({}),
             Profile.countDocuments({ isPublished: true }),
-            Subscription.countDocuments({ 'paymentHistory.status': 'pending' }),
-            Subscription.aggregate([
-                { $unwind: '$paymentHistory' },
-                { $match: { 'paymentHistory.status': 'approved' } },
-                { $group: { _id: null, total: { $sum: '$paymentHistory.amount' } } }
+            SubscriptionPayment.countDocuments({ status: 'pending' }),
+            SubscriptionPayment.aggregate([
+                { $match: { status: 'approved' } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
             ])
         ]);
 
@@ -78,6 +77,52 @@ const getAllUsers = async (req, res, next) => {
 };
 
 /**
+ * Create a new user directly (Admin)
+ * POST /api/admin/users
+ */
+const createUserAccount = async (req, res, next) => {
+    try {
+        const { username, email, password, role } = req.body;
+
+        if (!username || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username, email and password are required'
+            });
+        }
+
+        const existingUser = await User.findOne({
+            $or: [{ email }, { username }]
+        });
+
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'User with this email or username already exists'
+            });
+        }
+
+        const user = await User.create({
+            username,
+            email,
+            hashedPassword: password,
+            isVerified: true,
+            role: role || 'user'
+        });
+
+        const userData = user.toJSON();
+
+        res.status(201).json({
+            success: true,
+            message: 'User created successfully',
+            data: userData
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
  * Toggle User Active Status
  * PUT /api/admin/users/:id/status
  */
@@ -116,6 +161,48 @@ const toggleUserStatus = async (req, res, next) => {
 };
 
 /**
+ * Permanently Delete User and Associated Data
+ * DELETE /api/admin/users/:id
+ */
+const deleteUser = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        // Prevent admin from deleting themselves
+        if (req.user.id === id) {
+            return res.status(403).json({
+                success: false,
+                message: 'You cannot delete your own admin account'
+            });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // 1. Delete all profiles associated with this user
+        await Profile.deleteMany({ userId: id });
+
+        // 2. Delete the subscription associated with this user (if any)
+        await Subscription.deleteMany({ userId: id });
+
+        // 3. Delete the user document
+        await User.findByIdAndDelete(id);
+
+        res.status(200).json({
+            success: true,
+            message: 'User and all associated data have been permanently deleted'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
  * Get All Profiles (Admin View)
  * GET /api/admin/profiles
  */
@@ -142,9 +229,27 @@ const getAllProfilesAdmin = async (req, res, next) => {
 
         const count = await Profile.countDocuments(query);
 
+        // Enhance profiles with subscription info (unlocks left)
+        const enhancedProfiles = await Promise.all(
+            profiles.map(async (profile) => {
+                const pObj = profile.toObject();
+                // A profile belongs to a userId, the subscription is associated with that userId
+                const subscription = await Subscription.findOne({ userId: profile.userId._id });
+                if (subscription) {
+                    pObj.subscriptionId = subscription._id;
+                    pObj.unlocksLeft = subscription.remainingViews;
+                    pObj.hasSubscription = true;
+                } else {
+                    pObj.unlocksLeft = 0;
+                    pObj.hasSubscription = false;
+                }
+                return pObj;
+            })
+        );
+
         res.status(200).json({
             success: true,
-            data: profiles,
+            data: enhancedProfiles,
             totalPages: Math.ceil(count / limit),
             currentPage: page,
             totalProfiles: count
@@ -154,9 +259,64 @@ const getAllProfilesAdmin = async (req, res, next) => {
     }
 };
 
+/**
+ * Update User Subscription Unlocks (Admin)
+ * PUT /api/admin/subscriptions/:id/unlocks
+ */
+const updateSubscriptionUnlocks = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { unlocksLeft } = req.body;
+
+        if (unlocksLeft === undefined || unlocksLeft < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid unlocks count'
+            });
+        }
+
+        const updateData = { remainingViews: unlocksLeft };
+        if (unlocksLeft > 0) {
+            updateData.status = 'active';
+            // Also ensure it is valid from today if it was pending or expired
+            updateData.validFrom = new Date();
+            // Optional: extend validity by 1 year if needed, but for now just make sure it's active
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            updateData.validTo = oneYearFromNow;
+        } else {
+            updateData.status = 'expired';
+        }
+
+        const subscription = await Subscription.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true }
+        );
+
+        if (!subscription) {
+            return res.status(404).json({
+                success: false,
+                message: 'Subscription not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Unlocks updated successfully',
+            data: subscription
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboardStats,
     getAllUsers,
+    createUserAccount,
     toggleUserStatus,
-    getAllProfilesAdmin
+    deleteUser,
+    getAllProfilesAdmin,
+    updateSubscriptionUnlocks
 };
