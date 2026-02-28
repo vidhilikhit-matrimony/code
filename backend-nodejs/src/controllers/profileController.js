@@ -64,6 +64,16 @@ const buildFilterQuery = (query, currentUserId) => {
     // Exclude current user's profile
     filter.userId = { $ne: currentUserId };
 
+    // Search by name or profileCode
+    if (query.search) {
+        const searchRegex = new RegExp(query.search, 'i');
+        filter.$or = [
+            { profileCode: searchRegex },
+            { firstName: searchRegex },
+            { lastName: searchRegex }
+        ];
+    }
+
     // Published only
     if (query.publishedOnly === 'true') {
         filter.isPublished = true;
@@ -144,27 +154,56 @@ const getPrimaryPhoto = async (profile) => {
 /**
  * Format profile for limited (locked) response
  */
-const toLimitedProfile = async (profile) => ({
-    _id: profile._id,
-    profileCode: profile.profileCode,
-    firstName: profile.firstName,
-    dateOfBirth: profile.dateOfBirth,
-    age: profile.age,
-    height: profile.height,
-    maritalStatus: profile.maritalStatus || null,
-    caste: profile.caste && profile.gotra
-        ? `${profile.caste}-${profile.gotra}`
-        : profile.caste || 'N/A',
-    gotra: profile.gotra || null,
-    nakshatra: [profile.nakshatra, profile.nadi].filter(Boolean).join('/') || 'N/A',
-    nadi: profile.nadi || null,
-    education: profile.education || profile.occupation || 'N/A',
-    occupation: profile.occupation || null,
-    currentLocation: profile.currentLocation || 'N/A',
-    annualIncome: profile.annualIncome || null,
-    photoUrl: await getPrimaryPhoto(profile),
-    isUnlocked: false
-});
+const toLimitedProfile = async (profile) => {
+    // Sign all photo URLs
+    const signedPhotos = await Promise.all(
+        (profile.photos || []).map(async (p) => ({
+            url: await getPresignedUrl(p.url),
+            rawUrl: p.url,
+            isPrimary: p.isPrimary
+        }))
+    );
+
+    return {
+        _id: profile._id,
+        userId: profile.userId,
+        profileCode: profile.profileCode,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        dateOfBirth: profile.dateOfBirth,
+        age: profile.age,
+        height: profile.height,
+        caste: profile.caste,
+        subCaste: profile.subCaste,
+        gotra: profile.gotra,
+        rashi: profile.rashi,
+        nakshatra: profile.nakshatra,
+        nadi: profile.nadi,
+        timeOfBirth: profile.timeOfBirth,
+        education: profile.education,
+        occupation: profile.occupation,
+        annualIncome: profile.annualIncome,
+        assets: profile.assets,
+        currentLocation: profile.currentLocation,
+        workingPlace: profile.workingPlace,
+        country: profile.country,
+        maritalStatus: profile.maritalStatus,
+        fatherName: profile.fatherName,
+        motherName: profile.motherName,
+        profileFor: profile.profileFor,
+        brother: profile.brother,
+        sister: profile.sister,
+        sendersInfo: profile.sendersInfo,
+        expectations: profile.expectations,
+        photoUrl: await getPrimaryPhoto(profile),
+        photos: signedPhotos,
+        isActive: profile.isActive,
+        isPublished: profile.isPublished,
+        isUnlocked: false,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt
+    };
+};
 
 /**
  * Format profile for full (unlocked) response
@@ -174,6 +213,7 @@ const toFullProfile = async (profile) => {
     const signedPhotos = await Promise.all(
         (profile.photos || []).map(async (p) => ({
             url: await getPresignedUrl(p.url),
+            rawUrl: p.url,          // raw S3 key for photosToKeep tracking
             isPrimary: p.isPrimary
         }))
     );
@@ -339,10 +379,12 @@ const createOrUpdateProfile = async (req, res, next) => {
         }
 
         // Handle photo uploads
-        if (req.files) {
+        if (req.files || req.body.galleryCleanup === 'true') {
             try {
+                const { deleteFromS3 } = require('../services/uploadService');
+
                 // 1. Handle Profile Photo (Primary)
-                if (req.files.profilePhoto) {
+                if (req.files && req.files.profilePhoto) {
                     const file = req.files.profilePhoto[0];
                     const photoUrl = await uploadToS3(
                         file.buffer,
@@ -351,8 +393,16 @@ const createOrUpdateProfile = async (req, res, next) => {
                         `profile_${userId}`
                     );
 
-                    // Mark all existing photos as non-primary
-                    profile.photos.forEach(p => { p.isPrimary = false; });
+                    // Delete all existing primary photos from S3 and remove from array
+                    const oldPrimaries = profile.photos.filter(p => p.isPrimary);
+                    for (const old of oldPrimaries) {
+                        try {
+                            await deleteFromS3(old.url);
+                        } catch (err) {
+                            console.error(`[PRIMARY PHOTO] Failed to delete old photo ${old.url}:`, err.message);
+                        }
+                    }
+                    profile.photos = profile.photos.filter(p => !p.isPrimary);
 
                     // Add new photo as primary
                     profile.photos.push({
@@ -362,7 +412,33 @@ const createOrUpdateProfile = async (req, res, next) => {
                 }
 
                 // 2. Handle Gallery Images (Non-Primary)
-                if (req.files.galleryImages) {
+                // If galleryCleanup flag is set, delete any existing gallery photos NOT in photosToKeep
+                if (req.body.galleryCleanup === 'true') {
+                    // photosToKeep may be a string (single), array (multiple), or absent (delete all)
+                    const keepUrls = !req.body.photosToKeep
+                        ? []
+                        : Array.isArray(req.body.photosToKeep)
+                            ? req.body.photosToKeep
+                            : [req.body.photosToKeep];
+
+                    // Find non-primary photos to delete (not in keepUrls)
+                    const toDelete = profile.photos.filter(p => !p.isPrimary && !keepUrls.includes(p.url));
+
+                    // Delete from S3
+                    for (const photo of toDelete) {
+                        try {
+                            await deleteFromS3(photo.url);
+                        } catch (err) {
+                            console.error(`[GALLERY] Failed to delete photo ${photo.url}:`, err.message);
+                        }
+                    }
+
+                    // Remove deleted photos from array
+                    profile.photos = profile.photos.filter(p => p.isPrimary || keepUrls.includes(p.url));
+                }
+
+                // Now add new gallery images
+                if (req.files && req.files.galleryImages) {
                     for (const file of req.files.galleryImages) {
                         const photoUrl = await uploadToS3(
                             file.buffer,
@@ -384,6 +460,7 @@ const createOrUpdateProfile = async (req, res, next) => {
                 // Don't fail the whole request if photo upload fails
             }
         }
+
 
         res.status(profile.isNew ? 201 : 200).json({
             success: true,

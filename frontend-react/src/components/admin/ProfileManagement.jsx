@@ -10,7 +10,7 @@ const ProfileManagement = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all'); // all, published, unpublished
+    const [filterStatus, setFilterStatus] = useState('all');
     const [deleteLoading, setDeleteLoading] = useState(null);
 
     useEffect(() => {
@@ -151,8 +151,8 @@ const ProfileManagement = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex gap-2">
                                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${profile.isPublished
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
                                                 }`}>
                                                 {profile.isPublished ? <CheckCircle className="w-3 h-3" /> : <Loader2 className="w-3 h-3" />}
                                                 {profile.isPublished ? 'Published' : 'Draft'}

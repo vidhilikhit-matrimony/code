@@ -312,7 +312,9 @@ const Profiles = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
+    const [searchInput, setSearchInput] = useState('');
     const [filters, setFilters] = useState({
+        search: '',
         community: '',
         gender: '',
         ageMin: '',
@@ -320,6 +322,19 @@ const Profiles = () => {
         maritalStatus: '',
         workingPlace: ''
     });
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setFilters(prev => {
+                if (prev.search !== searchInput) {
+                    setPage(1);
+                    return { ...prev, search: searchInput };
+                }
+                return prev;
+            });
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
 
     // Check if user already has a profile
     useEffect(() => {
@@ -362,7 +377,9 @@ const Profiles = () => {
     };
 
     const clearFilters = () => {
+        setSearchInput('');
         setFilters({
+            search: '',
             community: '',
             gender: '',
             ageMin: '',
@@ -373,7 +390,7 @@ const Profiles = () => {
         setPage(1);
     };
 
-    const activeFilterCount = Object.values(filters).filter(v => v).length;
+    const activeFilterCount = Object.entries(filters).filter(([k, v]) => v && k !== 'search').length;
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -472,11 +489,34 @@ const Profiles = () => {
 
                     {/* Profile Grid */}
                     <div className="flex-1 min-w-0">
+                        {/* Search Bar */}
+                        <div className="mb-6 relative">
+                            <input
+                                type="text"
+                                placeholder="Search by Profile ID or Name..."
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                className="w-full pl-11 pr-10 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 shadow-sm transition-all hover:shadow-md"
+                            />
+                            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                            {searchInput && (
+                                <button
+                                    onClick={() => {
+                                        setSearchInput('');
+                                        handleFilterChange('search', '');
+                                    }}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 bg-slate-100 dark:bg-slate-700 rounded-full transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+
                         {/* Active Filters */}
                         {activeFilterCount > 0 && (
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {Object.entries(filters).map(([key, value]) => {
-                                    if (!value) return null;
+                                    if (!value || key === 'search') return null;
                                     const config = FILTER_CONFIG[key];
                                     const option = config?.options.find(o => o.value === value);
                                     return (

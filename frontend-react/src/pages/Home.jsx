@@ -328,6 +328,334 @@ function ProfileMatchCard({ profile, getAge }) {
     );
 }
 
+// ─── Download Modal ───────────────────────────────────────────────
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+function DownloadModal({ isOpen, onClose }) {
+    const [community, setCommunity] = useState('all');
+    const [gender, setGender] = useState('all');
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [error, setError] = useState('');
+
+    if (!isOpen) return null;
+
+    const handleClose = () => {
+        setCommunity('');
+        setGender('');
+        setError('');
+        setIsDownloading(false);
+        onClose();
+    };
+
+    const handleDownload = async () => {
+        setError('');
+        setIsDownloading(true);
+        try {
+            const query = new URLSearchParams({ community, gender }).toString();
+            const url = `${API_BASE_URL}/reports/profiles/public?${query}`;
+            const response = await fetch(url, { method: 'GET' });
+
+            if (!response.ok) {
+                let msg = 'Download failed. Please try again.';
+                try {
+                    const body = await response.json();
+                    if (body?.message?.toLowerCase().includes('no published profiles')) {
+                        msg = 'No profiles found for the selected filters. Please try a different combination.';
+                    } else {
+                        msg = body?.message || msg;
+                    }
+                } catch { }
+                setError(msg);
+                return;
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const cd = response.headers.get('content-disposition');
+            const match = cd?.match(/filename="?([^"]+)"?/i);
+            link.href = downloadUrl;
+            link.download = match ? match[1] : `VidhiLikhit_${community}_${gender}_Profiles.pdf`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+            handleClose();
+        } catch (err) {
+            setError('Network error. Please check your connection.');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    return (
+        <div
+            style={{
+                position: 'fixed', inset: 0, zIndex: 9999,
+                background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+            }}
+            onClick={handleClose}
+        >
+            <div
+                style={{
+                    background: '#fff', borderRadius: '16px', padding: '32px',
+                    width: '100%', maxWidth: '420px', boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+                    position: 'relative'
+                }}
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Close Button */}
+                <button
+                    onClick={handleClose}
+                    style={{
+                        position: 'absolute', top: '16px', right: '16px',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        fontSize: '20px', color: '#999', lineHeight: 1
+                    }}
+                >✕</button>
+
+                {/* Title */}
+                <h2 style={{ textAlign: 'center', fontSize: '22px', fontWeight: 800, color: '#FE6F61', marginBottom: '8px' }}>
+                    Download Biodata Profiles
+                </h2>
+                <p style={{ textAlign: 'center', color: '#888', fontSize: '13px', marginBottom: '24px' }}>
+                    Select community and gender to get the PDF
+                </p>
+
+                {/* Community Select */}
+                <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#FE6F61', marginBottom: '6px' }}>Community</label>
+                    <select
+                        value={community}
+                        onChange={e => { setCommunity(e.target.value); setError(''); }}
+                        style={{
+                            width: '100%', padding: '10px 14px', borderRadius: '10px',
+                            border: community ? '1.5px solid #FE6F61' : '1.5px solid #e2e8f0',
+                            fontSize: '14px', outline: 'none',
+                            appearance: 'none', cursor: 'pointer', background: '#fff'
+                        }}
+                    >
+                        <option value="all">All Communities</option>
+                        <option value="brahmin">Brahmin</option>
+                        <option value="lingayat">Lingayat</option>
+                    </select>
+                </div>
+
+                {/* Gender Select */}
+                <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#FE6F61', marginBottom: '6px' }}>Gender</label>
+                    <select
+                        value={gender}
+                        onChange={e => { setGender(e.target.value); setError(''); }}
+                        style={{
+                            width: '100%', padding: '10px 14px', borderRadius: '10px',
+                            border: gender ? '1.5px solid #FE6F61' : '1.5px solid #e2e8f0',
+                            fontSize: '14px', outline: 'none',
+                            appearance: 'none', cursor: 'pointer', background: '#fff'
+                        }}
+                    >
+                        <option value="all">All Genders</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+
+                {/* Error */}
+                {error && (
+                    <div style={{ marginBottom: '16px', padding: '10px 14px', borderRadius: '8px', background: '#fff5f5', border: '1px solid #fed7d7', color: '#c53030', fontSize: '13px' }}>
+                        {error}
+                    </div>
+                )}
+
+                {/* Download Button */}
+                <button
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    style={{
+                        width: '100%', padding: '12px', borderRadius: '10px',
+                        border: 'none', cursor: isDownloading ? 'not-allowed' : 'pointer',
+                        background: isDownloading ? '#ffd4d0' : 'linear-gradient(135deg, #FE6F61, #FF8C00)',
+                        color: '#fff', fontWeight: 800, fontSize: '15px',
+                        transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                    }}
+                >
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    {isDownloading ? 'Downloading...' : 'Download Profiles PDF'}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ─── Download Profiles Section ───────────────────────────────────
+function DownloadProfilesSection() {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [sectionRef, inView] = useInView();
+
+    const features = [
+        'Separate downloads for Brahmin & Lingayat profiles',
+        'Verified details with authentic information',
+        'Family & educational background included',
+        'Contact the website owner for selected matches',
+    ];
+
+    return (
+        <>
+            <section
+                ref={sectionRef}
+                style={{
+                    background: 'linear-gradient(135deg, #fff9f5 0%, #fff0e8 50%, #ffedf0 100%)',
+                    padding: '80px 0',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}
+            >
+                {/* Decorative background blobs */}
+                <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255,110,97,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(255,140,0,0.1) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+
+                <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+                    {/* Section top label */}
+                    <div
+                        className={`transition-all duration-700 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                        style={{ textAlign: 'center', marginBottom: '32px' }}
+                    >
+                        <span style={{
+                            fontSize: '12px', fontWeight: 700, letterSpacing: '3px',
+                            textTransform: 'uppercase', color: '#FE6F61', opacity: 0.8
+                        }}>Community-Based Matches</span>
+                    </div>
+
+                    {/* Main Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '48px', alignItems: 'center' }}>
+
+                        {/* Left: Text Content */}
+                        <div className={`transition-all duration-700 delay-100 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
+                            <h2 style={{
+                                fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 900, lineHeight: 1.15,
+                                background: 'linear-gradient(135deg, #FF2754, #FF6600)',
+                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text', marginBottom: '14px'
+                            }}>
+                                Download Verified Brahmin &amp; Lingayat Profiles Instantly
+                            </h2>
+
+                            <p style={{
+                                fontSize: '16px', fontWeight: 600, lineHeight: 1.4,
+                                background: 'linear-gradient(135deg, #FF2754, #FF6600)',
+                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text', marginBottom: '20px'
+                            }}>
+                                A Bright Ray of Hope — Find Your Perfect Match With Trusted Biodata PDFs.
+                            </p>
+
+                            <div style={{ color: '#555', marginBottom: '24px', lineHeight: 1.7 }}>
+                                <p style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
+                                    Looking For The Right Life Partner In Your Own Community?
+                                </p>
+                                <p style={{ fontSize: '14px', marginBottom: '6px' }}>
+                                    With VidhiLikhit, you can instantly download verified biodata PDFs of Brahmin and Lingayat profiles — complete with personal details, education, and profession details.
+                                </p>
+                                <p style={{ fontSize: '14px' }}>
+                                    Shortlist your favourites, and connect directly through us for the next step.
+                                </p>
+                            </div>
+
+                            {/* Feature Checklist */}
+                            <div style={{ marginBottom: '32px' }}>
+                                {features.map((feature, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                        <div style={{
+                                            width: '24px', height: '24px', borderRadius: '50%',
+                                            background: '#e8f5e9', flexShrink: 0,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <svg width="14" height="14" viewBox="0 0 20 20" fill="#22c55e">
+                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <span style={{ color: '#444', fontSize: '14px' }}>{feature}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* CTA Button */}
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '10px',
+                                    padding: '14px 32px', borderRadius: '12px',
+                                    border: 'none', cursor: 'pointer',
+                                    background: '#FE6F61',
+                                    color: '#fff', fontWeight: 800, fontSize: '16px',
+                                    boxShadow: '0 8px 24px rgba(254,111,97,0.35)',
+                                    transition: 'all 0.3s'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = '#e5594a'; e.currentTarget.style.transform = 'scale(1.04)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = '#FE6F61'; e.currentTarget.style.transform = 'scale(1)'; }}
+                            >
+                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download PDF
+                            </button>
+                        </div>
+
+                        {/* Right: Decorative Visual */}
+                        <div className={`transition-all duration-700 delay-200 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}
+                            style={{ display: 'flex', justifyContent: 'center' }}
+                        >
+                            <div style={{ position: 'relative', width: '100%', maxWidth: '360px' }}>
+                                {/* Rotated accent card */}
+                                <div style={{
+                                    position: 'absolute', inset: 0, background: '#FFD5C2',
+                                    borderRadius: '20px', transform: 'rotate(8deg)',
+                                    top: '-10px', right: '-10px'
+                                }} />
+                                {/* Main card */}
+                                <div style={{
+                                    position: 'relative', borderRadius: '20px',
+                                    background: 'linear-gradient(135deg, #fff5f0, #fff0f5)',
+                                    boxShadow: '0 16px 48px rgba(255,111,97,0.18)',
+                                    padding: '48px 32px', textAlign: 'center', zIndex: 1
+                                }}>
+                                    <div style={{ fontSize: '80px', marginBottom: '16px', lineHeight: 1 }}>👫</div>
+                                    <div style={{
+                                        fontSize: '20px', fontWeight: 800, color: '#333', marginBottom: '8px'
+                                    }}>Community Profiles</div>
+                                    <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.6 }}>
+                                        Brahmin &amp; Lingayat<br />Verified Biodata PDFs
+                                    </div>
+                                    {/* Mini stats */}
+                                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '24px' }}>
+                                        {[{ val: '10K+', label: 'Profiles' }, { val: '400+', label: 'Weddings' }].map(s => (
+                                            <div key={s.label} style={{
+                                                background: '#fff', borderRadius: '10px',
+                                                padding: '10px 18px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
+                                            }}>
+                                                <div style={{ fontSize: '18px', fontWeight: 900, color: '#FE6F61' }}>{s.val}</div>
+                                                <div style={{ fontSize: '11px', color: '#999' }}>{s.label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            {/* Download Modal */}
+            <DownloadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        </>
+    );
+}
+
 // ─── Main Component ──────────────────────────────────────────────
 
 const Home = () => {
@@ -539,6 +867,11 @@ const Home = () => {
                 SECTION 1.5: SUITABLE MATCHES CAROUSEL
             ══════════════════════════════════════════════════ */}
             <SuitableMatchesCarousel onViewMore={() => navigate('/profiles')} />
+
+            {/* ══════════════════════════════════════════════════
+                SECTION 1.7: DOWNLOAD PROFILES PDF
+            ══════════════════════════════════════════════════ */}
+            <DownloadProfilesSection />
 
             {/* ══════════════════════════════════════════════════
                 SECTION 2: HOW IT WORKS

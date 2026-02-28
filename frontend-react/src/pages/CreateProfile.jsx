@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import {
     User, Calendar, Ruler, Heart, BookOpen, Briefcase, MapPin,
     Users, Phone, FileText, Camera, ChevronRight, ChevronLeft, Check, Loader2
 } from 'lucide-react';
 import { createProfile, getMyProfile } from '../services/profileService';
+import { updateUser } from '../redux/slices/authSlice';
+import ImageCropModal from '../components/ImageCropModal';
 
 // ─── Step Definitions ───────────────────────────────────────────
 const STEPS = [
@@ -178,6 +181,7 @@ const StepProgress = ({ currentStep }) => (
 // ─── Main Component ─────────────────────────────────────────────
 const CreateProfile = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState(INITIAL_FORM);
     const [photoFile, setPhotoFile] = useState(null);
@@ -190,6 +194,8 @@ const CreateProfile = () => {
     const [loadingProfile, setLoadingProfile] = useState(true);
     // Tracks which community fields have "Other" selected
     const [othersMap, setOthersMap] = useState({ subCaste: false, gotra: false, rashi: false, nakshatra: false, nadi: false });
+    // Crop modal state: { imageSrc, fileName, type: 'primary'|'gallery', pendingQueue: File[] }
+    const [cropTarget, setCropTarget] = useState(null);
 
     // Fetch existing profile on mount
     useEffect(() => {
@@ -317,40 +323,73 @@ const CreateProfile = () => {
     const makeOtherInputHandler = (fieldName) => (e) =>
         setFormData(prev => ({ ...prev, [fieldName]: e.target.value }));
 
+    // Opens crop modal for the primary profile photo
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            if (file.size > 50 * 1024 * 1024) {
-                toast.error('Photo must be under 50MB');
-                return;
-            }
-            setPhotoFile(file);
-            setPhotoPreview(URL.createObjectURL(file));
-        }
+        // Reset input so same file can be re-selected after cancel
+        e.target.value = '';
+        if (!file) return;
+        if (file.size > 50 * 1024 * 1024) { toast.error('Photo must be under 50MB'); return; }
+        setCropTarget({
+            imageSrc: URL.createObjectURL(file),
+            fileName: file.name,
+            type: 'primary',
+            pendingQueue: []
+        });
     };
 
+    // Opens crop modal for each gallery file in sequence
     const handleGalleryChange = (e) => {
         const files = Array.from(e.target.files);
-        if (files.length + galleryFiles.length + existingGallery.length > 2) {
-            toast.error('You can upload a maximum of 2 additional photos');
+        e.target.value = '';
+        const slotsLeft = 2 - galleryFiles.length - existingGallery.length;
+        if (files.length > slotsLeft) {
+            toast.error(`You can only add ${slotsLeft} more photo${slotsLeft === 1 ? '' : 's'}`);
             return;
         }
-
-        const validFiles = [];
-        const newPreviews = [];
-
-        files.forEach(file => {
-            if (file.size > 50 * 1024 * 1024) {
-                toast.error(`File ${file.name} is too large (max 50MB)`);
-                return;
-            }
-            validFiles.push(file);
-            newPreviews.push(URL.createObjectURL(file));
+        const validFiles = files.filter(f => {
+            if (f.size > 50 * 1024 * 1024) { toast.error(`${f.name} is too large (max 50MB)`); return false; }
+            return true;
         });
-
-        setGalleryFiles(prev => [...prev, ...validFiles]);
-        setGalleryPreviews(prev => [...prev, ...newPreviews]);
+        if (validFiles.length === 0) return;
+        // Open crop modal for the first file; the rest go into pendingQueue
+        const [first, ...rest] = validFiles;
+        setCropTarget({
+            imageSrc: URL.createObjectURL(first),
+            fileName: first.name,
+            type: 'gallery',
+            pendingQueue: rest
+        });
     };
+
+    // Called when user clicks "Crop & Use"
+    const handleCropConfirm = useCallback((croppedFile, previewUrl) => {
+        const { type, pendingQueue } = cropTarget;
+        if (type === 'primary') {
+            setPhotoFile(croppedFile);
+            setPhotoPreview(previewUrl);
+        } else {
+            setGalleryFiles(prev => [...prev, croppedFile]);
+            setGalleryPreviews(prev => [...prev, previewUrl]);
+        }
+        // If more gallery files are queued, open the modal for the next one
+        if (pendingQueue && pendingQueue.length > 0) {
+            const [next, ...remaining] = pendingQueue;
+            setCropTarget({
+                imageSrc: URL.createObjectURL(next),
+                fileName: next.name,
+                type: 'gallery',
+                pendingQueue: remaining
+            });
+        } else {
+            setCropTarget(null);
+        }
+    }, [cropTarget]);
+
+    // Called when user cancels the crop modal (discards entire remaining queue)
+    const handleCropCancel = useCallback(() => {
+        setCropTarget(null);
+    }, []);
 
     const removeGalleryImage = (index, isExisting) => {
         if (isExisting) {
@@ -385,8 +424,15 @@ const CreateProfile = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await createProfile(formData, photoFile, galleryFiles);
+            // Pass the S3 keys of existing gallery photos to keep
+            // so the backend can remove any that were deleted
+            const photosToKeep = existingGallery.map(ph => ph.rawUrl || ph.url);
+            const response = await createProfile(formData, photoFile, galleryFiles, photosToKeep);
             if (response.success) {
+                // Sync fresh photoUrl into Redux store so navbar avatar updates immediately
+                if (response.data?.photoUrl) {
+                    dispatch(updateUser({ photoUrl: response.data.photoUrl }));
+                }
                 toast.success(isEditMode ? 'Profile updated successfully! ✨' : 'Profile created successfully! 🎉');
                 navigate('/profiles');
             } else {
@@ -584,7 +630,11 @@ const CreateProfile = () => {
                         </label>
                         <div className="flex items-center gap-4">
                             {photoPreview ? (
-                                <img src={photoPreview} alt="Preview" className="w-20 h-20 rounded-lg object-cover border-2 border-primary-200" />
+                                <img
+                                    src={photoPreview}
+                                    alt="Preview"
+                                    className="w-20 h-20 rounded-lg object-cover border-2 border-primary-200 shadow-sm"
+                                />
                             ) : (
                                 <div className="w-20 h-20 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
                                     <Camera className="w-8 h-8 text-slate-400" />
@@ -609,15 +659,30 @@ const CreateProfile = () => {
                         <div className="flex flex-wrap gap-4">
                             {/* Existing Gallery Images */}
                             {existingGallery.map((photo, index) => (
-                                <div key={`existing-${index}`} className="relative group">
-                                    <img src={photo.url} alt="Gallery" className="w-20 h-20 rounded-lg object-cover border border-slate-200" />
+                                <div key={`existing-${index}`} className="relative group shrink-0">
+                                    <img
+                                        src={photo.url}
+                                        alt="Gallery"
+                                        className="w-20 h-20 rounded-lg object-cover border border-slate-200 shadow-sm"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeGalleryImage(index, true)}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <ChevronRight className="w-4 h-4 rotate-45" />
+                                    </button>
                                 </div>
                             ))}
 
                             {/* New Previews */}
                             {galleryPreviews.map((preview, index) => (
-                                <div key={`new-${index}`} className="relative group">
-                                    <img src={preview} alt="New Gallery" className="w-20 h-20 rounded-lg object-cover border border-primary-200" />
+                                <div key={`new-${index}`} className="relative group shrink-0">
+                                    <img
+                                        src={preview}
+                                        alt="New Gallery"
+                                        className="w-20 h-20 rounded-lg object-cover border border-primary-200 shadow-sm"
+                                    />
                                     <button
                                         type="button"
                                         onClick={() => removeGalleryImage(index, false)}
@@ -628,7 +693,7 @@ const CreateProfile = () => {
                                 </div>
                             ))}
 
-                            {/* Upload Button */}
+                            {/* Upload Button — show when total photos < 2 */}
                             {existingGallery.length + galleryFiles.length < 2 && (
                                 <label className="w-20 h-20 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-primary-500 transition-colors">
                                     <Camera className="w-6 h-6 text-slate-400" />
@@ -706,6 +771,16 @@ const CreateProfile = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Crop Modal Overlay */}
+            {cropTarget && (
+                <ImageCropModal
+                    imageSrc={cropTarget.imageSrc}
+                    fileName={cropTarget.fileName}
+                    onConfirm={handleCropConfirm}
+                    onCancel={handleCropCancel}
+                />
+            )}
         </div>
     );
 };

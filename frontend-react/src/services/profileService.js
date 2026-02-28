@@ -3,32 +3,36 @@ import api from './api';
 /**
  * Create or update profile (with optional photo)
  */
-export const createProfile = async (profileData, photoFile, galleryPhotos = []) => {
-    // If there's a photo or gallery photos, use FormData
-    if (photoFile || galleryPhotos.length > 0) {
-        const formData = new FormData();
-        Object.entries(profileData).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-                formData.append(key, value);
-            }
-        });
-
-        if (photoFile) {
-            formData.append('profilePhoto', photoFile);
+export const createProfile = async (profileData, photoFile, galleryPhotos = [], photosToKeep = []) => {
+    // Always use FormData so we can send photosToKeep in edit mode
+    const formData = new FormData();
+    Object.entries(profileData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+            formData.append(key, value);
         }
+    });
 
-        if (galleryPhotos.length > 0) {
-            galleryPhotos.forEach((file) => {
-                formData.append('galleryImages', file);
-            });
-        }
+    if (photoFile) {
+        formData.append('profilePhoto', photoFile);
+    }
 
-        return await api.post('/profiles', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
+    if (galleryPhotos.length > 0) {
+        galleryPhotos.forEach((file) => {
+            formData.append('galleryImages', file);
         });
     }
 
-    return await api.post('/profiles', profileData);
+    // Always send a sentinel so the backend runs gallery cleanup even when all photos removed
+    formData.append('galleryCleanup', 'true');
+
+    // List of existing gallery photo S3 URLs to keep (empty = delete all existing)
+    photosToKeep.forEach((url) => {
+        formData.append('photosToKeep', url);
+    });
+
+    return await api.post('/profiles', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
 };
 
 /**

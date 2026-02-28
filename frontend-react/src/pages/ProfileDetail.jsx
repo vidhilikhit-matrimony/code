@@ -5,51 +5,58 @@ import { toast } from 'sonner';
 import {
     ArrowLeft, Heart, MapPin, Briefcase, GraduationCap, Calendar, Ruler,
     Phone, Mail, Users, Star, Clock, Shield, Edit3, User, Loader2, Lock, LogOut,
-    ChevronLeft, ChevronRight, FileText, Download
+    ChevronLeft, ChevronRight, FileText, Download, CheckCircle, AlertCircle, X
 } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
 import { getProfileById, unlockProfile, deleteProfile } from '../services/profileService';
 
-
 // ─── Detail Row Component ───────────────────────────────────────
-const DetailRow = ({ icon: Icon, label, value, iconColor = 'text-primary-500' }) => {
+const DetailRow = ({ icon: Icon, label, value, iconColor = 'text-primary-500', className = '' }) => {
     if (!value || value === 'N/A') return null;
     return (
-        <div className="flex items-start gap-3 py-2.5">
-            <Icon className={`w-4.5 h-4.5 ${iconColor} mt-0.5 flex-shrink-0`} />
-            <div className="flex-1 min-w-0">
-                <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">{label}</p>
-                <p className="text-sm text-slate-800 dark:text-slate-200 font-medium mt-0.5">{value}</p>
+        <div className={`flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors ${className}`}>
+            <div className={`p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm flex-shrink-0 ${iconColor}`}>
+                <Icon className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</p>
+                <p className="text-sm text-slate-900 dark:text-slate-100 font-semibold">{value}</p>
             </div>
         </div>
     );
 };
 
 // ─── Section Component ──────────────────────────────────────────
-const Section = ({ title, children }) => (
-    <div className="mb-6">
-        <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
-            {title}
-        </h3>
-        <div className="space-y-1">{children}</div>
+const Section = ({ title, children, icon: Icon, iconColor = 'text-slate-500' }) => (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6 transition-all hover:shadow-md">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex items-center gap-3">
+            {Icon && <Icon className={`w-5 h-5 ${iconColor}`} />}
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                {title}
+            </h3>
+        </div>
+        <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            {children}
+        </div>
     </div>
 );
 
 // ─── Loading Skeleton ───────────────────────────────────────────
 const DetailSkeleton = () => (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-            <div className="animate-pulse">
-                <div className="h-8 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-6" />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="aspect-[3/4] bg-slate-200 dark:bg-slate-700 rounded-2xl" />
-                    <div className="space-y-4">
-                        <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
-                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
-                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3" />
-                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
-                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
-                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="h-48 md:h-64 bg-slate-200 dark:bg-slate-800 animate-pulse" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 relative z-10 pb-20">
+            <div className="flex flex-col md:flex-row gap-8">
+                <div className="w-full md:w-1/3 lg:w-1/4 animate-pulse">
+                    <div className="aspect-[4/5] bg-slate-300 dark:bg-slate-700 rounded-2xl border-4 border-white dark:border-slate-800 shadow-xl" />
+                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded mt-4 w-1/2 mx-auto" />
+                </div>
+                <div className="w-full md:w-2/3 lg:w-3/4 pt-8 md:pt-24 space-y-6 animate-pulse">
+                    <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+                    <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-1/4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                        <div className="h-24 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+                        <div className="h-24 bg-slate-200 dark:bg-slate-700 rounded-xl" />
                     </div>
                 </div>
             </div>
@@ -68,6 +75,7 @@ const ProfileDetail = () => {
     const [selectedPhoto, setSelectedPhoto] = useState(0);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 
     const handleUnlock = async () => {
         try {
@@ -101,7 +109,6 @@ const ProfileDetail = () => {
             const response = await deleteProfile(profile._id);
             if (response.success) {
                 toast.success(response.message || 'Profile deleted successfully');
-                // Force a reload of the user state or just navigate away
                 navigate('/');
             } else {
                 toast.error(response.message || 'Failed to delete profile');
@@ -136,13 +143,7 @@ const ProfileDetail = () => {
     const handleDownloadPdf = async () => {
         setIsDownloading(true);
         try {
-            // We need to fetch the blob manually to handle the download
-            // profileService doesn't have a specific method yet, but we can add it or call api directly.
-            // Let's add it to profileService for consistency, but for now direct is fine if service is not open.
-            // Actually, I should update profileService first.
-            // But let's check if I can just use the token.
             const token = localStorage.getItem('accessToken');
-
             if (!token) {
                 toast.error('Please login to download PDF');
                 navigate('/login');
@@ -160,7 +161,6 @@ const ProfileDetail = () => {
                 throw new Error(errorData.message || 'Failed to download PDF');
             }
 
-            // Ensure we handle it as a blob correctly with specific type
             const blob = await response.blob();
             const pdfBlob = new Blob([blob], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(pdfBlob);
@@ -187,346 +187,181 @@ const ProfileDetail = () => {
     const photos = profile.photos?.length > 0 ? profile.photos : null;
     const mainPhoto = (photos && photos[selectedPhoto]?.url) || profile.photoUrl;
 
-    // Format age display
     const ageDisplay = profile.age ? `${profile.age} years` : null;
-
-    // Format date of birth
     const dobDisplay = profile.dateOfBirth
         ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
         : null;
 
+    const isOwner = user && profile.userId === user.id;
+
     return (
-        <div className="h-[100dvh] bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
-            {/* Top Navigation */}
-            <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex-none z-30">
-                <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
+            {/* ─── Top Navigation Bar ─── */}
+            <div className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 supports-[backdrop-filter]:bg-white/60">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
                     <button
                         onClick={() => navigate('/profiles')}
-                        className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-primary-600 transition-colors font-medium"
+                        className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium group"
                     >
-                        <ArrowLeft className="w-5 h-5" />
-                        <span className="hidden sm:inline">Back to Profiles</span>
+                        <div className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
+                            <ArrowLeft className="w-4 h-4" />
+                        </div>
+                        <span className="hidden sm:inline">Back to Search</span>
                     </button>
 
-                    <div className="flex items-center gap-2 sm:gap-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full font-semibold">
-                                {profile.profileCode}
-                            </span>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        {/* Profile Code Badge */}
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wider uppercase">ID</span>
+                            <span className="text-sm text-slate-900 dark:text-white font-bold tracking-wide">{profile.profileCode}</span>
                         </div>
 
-                        {/* Download PDF Button - Visible to everyone who can unlock or owner/admin */}
-                        {(isUnlocked || (user && (profile.userId === user.id || user.role === 'admin'))) && (
+                        {/* Download PDF Button */}
+                        {(isUnlocked || isOwner || user?.role === 'admin') && (
                             <button
                                 onClick={handleDownloadPdf}
                                 disabled={isDownloading}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:border-primary-300 dark:hover:border-primary-700 hover:text-primary-600 dark:hover:text-primary-400 hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Download Biodata"
                             >
-                                {isDownloading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin text-primary-600" />
-                                ) : (
-                                    <FileText className="w-4 h-4" />
-                                )}
-                                <span className="hidden sm:inline">{isDownloading ? 'Downloading...' : 'PDF'}</span>
+                                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin text-primary-600" /> : <Download className="w-4 h-4" />}
+                                <span className="hidden sm:inline">{isDownloading ? 'Generating...' : 'Download PDF'}</span>
                             </button>
                         )}
 
-                        <div className="hidden md:flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 text-xs font-medium text-slate-700 dark:text-slate-300">
-                            <span className="text-primary-600 dark:text-primary-400 font-bold mr-1">{user?.remainingViews || 0}</span> Unlocks Left
+                        {/* Unlocks Remaining */}
+                        <div className="hidden md:flex flex-col items-end">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Remaining</span>
+                            <div className="flex items-center gap-1.5 text-sm font-medium text-slate-900 dark:text-slate-100">
+                                <Shield className="w-3.5 h-3.5 text-primary-500" />
+                                <span><span className="font-bold text-primary-600 dark:text-primary-400">{user?.remainingViews || 0}</span> Unlocks</span>
+                            </div>
                         </div>
 
+                        <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1"></div>
 
-                        <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
-
-                        <div className="flex items-center gap-2 sm:gap-3">
+                        {/* User Interaction */}
+                        <div className="flex items-center gap-2">
                             {user?.photoUrl ? (
                                 <img
                                     src={user.photoUrl}
                                     alt={user.firstName || user.username}
-                                    className="w-8 h-8 rounded-full object-cover border border-slate-200 cursor-pointer"
+                                    className="w-9 h-9 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-sm cursor-pointer hover:border-primary-200 transition-colors"
                                     onClick={() => navigate('/profile/me')}
-                                    title={user.firstName || user.username}
                                 />
                             ) : (
                                 <div
-                                    className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-xs cursor-pointer"
+                                    className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 text-white flex items-center justify-center font-bold text-sm shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
                                     onClick={() => navigate('/profile/me')}
-                                    title={user?.firstName || user?.username}
                                 >
                                     {(user?.firstName || user?.username || 'U').charAt(0).toUpperCase()}
                                 </div>
                             )}
                             <button
-                                onClick={() => {
-                                    dispatch(logout());
-                                    navigate('/');
-                                }}
-                                className="text-slate-500 hover:text-red-600 transition-colors p-1"
+                                onClick={() => { dispatch(logout()); navigate('/'); }}
+                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full transition-colors"
                                 title="Logout"
                             >
-                                <LogOut className="w-5 h-5" />
+                                <LogOut className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Main Content — scrollable on mobile, fixed h/overflow-hidden on desktop */}
-            <div className="w-full max-w-6xl mx-auto px-4 py-6 lg:py-0 flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 lg:h-full">
+            {/* ─── Hero Banner ─── */}
+            <div className="relative bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800">
+                {/* Subtle Pattern Background Banner instead of bright gradient */}
+                <div className="absolute inset-0 h-48 md:h-64 overflow-hidden bg-slate-100 dark:bg-slate-800/80">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNjYmQ1ZTEiIGZpbGwtb3BhY2l0eT0iMC40Ii8+PC9zdmc+')] [mask-image:linear-gradient(to_bottom,white,transparent)]"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white dark:from-slate-800 to-transparent"></div>
+                </div>
 
-                    {/* ─── Left: Photo Gallery ─── */}
-                    <div className="flex flex-col items-center gap-3 lg:py-10 lg:self-center">
-                        {/* Main Photo — compact square */}
-                        <div className="relative w-full max-w-md aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-primary-100 to-secondary-100 dark:from-slate-700 dark:to-slate-600 shadow-lg mx-auto">
-                            {mainPhoto ? (
-                                <img
-                                    src={mainPhoto}
-                                    alt={profile.firstName}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center">
-                                    <User className="w-20 h-20 text-slate-300 dark:text-slate-500" />
-                                    <p className="text-slate-400 mt-2 text-sm">No photo available</p>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative pt-20 md:pt-32 pb-8">
+                    <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-end">
+
+                        {/* Profile Photo Avatar */}
+                        <div className="relative group w-40 h-40 md:w-56 md:h-56 flex-shrink-0 z-10 transition-transform duration-300 hover:scale-[1.02]">
+                            <div className="absolute inset-0 bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] rotate-3 opacity-20 group-hover:rotate-6 transition-transform duration-300"></div>
+                            <div className="absolute inset-0 bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] -rotate-3 opacity-20 group-hover:-rotate-6 transition-transform duration-300"></div>
+
+                            <div
+                                className={`relative w-full h-full rounded-[2rem] md:rounded-[2.5rem] border-4 md:border-8 border-white dark:border-slate-800 shadow-xl overflow-hidden bg-slate-100 dark:bg-slate-700 ${mainPhoto ? 'cursor-pointer' : ''}`}
+                                onClick={() => mainPhoto && setIsPhotoModalOpen(true)}
+                            >
+                                {mainPhoto ? (
+                                    <div className="group/img w-full h-full relative">
+                                        <img
+                                            src={mainPhoto}
+                                            alt={profile.firstName}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                                        />
+                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                            <span className="text-white text-sm font-medium bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm">View Photo</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
+                                        <User className="w-16 md:w-20 h-16 md:h-20 text-slate-300 dark:text-slate-500" />
+                                    </div>
+                                )}
+
+                                {/* Lock Status overlay on photo */}
+                                <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20">
+                                    {isUnlocked ? (
+                                        <div className="bg-green-500/90 text-white p-1.5 md:p-2 rounded-xl backdrop-blur-md shadow-lg" title="Profile Unlocked">
+                                            <Shield className="w-4 h-4 md:w-5 md:h-5" />
+                                        </div>
+                                    ) : (
+                                        <div className="bg-slate-900/80 text-white p-1.5 md:p-2 rounded-xl backdrop-blur-md shadow-lg" title="Profile Locked">
+                                            <Lock className="w-4 h-4 md:w-5 md:h-5" />
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-
-                            {/* Prev / Next */}
-                            {photos && photos.length > 1 && (
-                                <>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setSelectedPhoto((prev) => (prev - 1 + photos.length) % photos.length); }}
-                                        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-sm transition-all"
-                                    >
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setSelectedPhoto((prev) => (prev + 1) % photos.length); }}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-sm transition-all"
-                                    >
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
-                                </>
-                            )}
-
-                            {/* Age Badge */}
-                            {profile.age && (
-                                <div className="absolute bottom-3 left-3 bg-primary-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold text-sm shadow">
-                                    {profile.age} yrs
-                                </div>
-                            )}
-
-                            {/* Lock Badge */}
-                            <div className={`absolute top-3 right-3 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 ${isUnlocked ? 'bg-green-500/80' : 'bg-slate-800/60'}`}>
-                                {isUnlocked ? <Shield className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                                {isUnlocked ? 'Unlocked' : 'Locked'}
                             </div>
                         </div>
 
-                        {/* Thumbnail strip — only when multiple photos */}
-                        {photos && photos.length > 1 && (
-                            <div className="flex gap-2 justify-center flex-wrap max-w-sm">
-                                {photos.map((p, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => setSelectedPhoto(idx)}
-                                        className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${selectedPhoto === idx
-                                            ? 'border-primary-500 shadow-md scale-105'
-                                            : 'border-transparent opacity-60 hover:opacity-100'}`}
-                                    >
-                                        <img src={p.url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                                    </button>
-                                ))}
+                        {/* Basic Info (Hero Content) */}
+                        <div className="flex-1 text-center md:text-left pt-4 md:pt-0 md:pb-4 z-10">
+                            <div className="sm:hidden mb-2 inline-flex items-center gap-1.5 px-3 py-1 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-full text-xs font-bold">
+                                {profile.profileCode}
                             </div>
-                        )}
-                    </div>
 
-
-                    {/* ─── Right: Profile Details (scrollable details only) ─── */}
-                    <div className="lg:h-full lg:py-10 lg:pr-2 flex flex-col lg:overflow-hidden">
-                        {/* Name & Basic Info Header (Fixed) */}
-                        <div className="mb-6 flex-none">
-                            {/* MY PROFILE DASHBOARD - Only visible for own profile */}
-                            {user && profile.userId === user.id && (
-                                <div className="mb-6">
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
-                                        <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">
-                                            My Profile
-                                        </h2>
-                                        <div className="flex flex-wrap gap-2 sm:gap-3">
-                                            <button
-                                                onClick={() => navigate('/create-profile')} // Assuming create-profile handles edit/update logic based on existence
-                                                className="btn bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2 px-3 py-2 text-sm"
-                                            >
-                                                <Edit3 className="w-4 h-4" /> Edit
-                                            </button>
-                                            <button
-                                                onClick={handleDelete}
-                                                disabled={isDeleting}
-                                                className="btn bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 px-3 py-2 text-sm disabled:opacity-50"
-                                            >
-                                                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl p-4 mb-6">
-                                        <h3 className="text-orange-600 dark:text-orange-400 font-bold mb-3 border-b border-orange-200 dark:border-orange-800 pb-2">
-                                            Profile Status
-                                        </h3>
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                            <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
-                                                <p className="text-xs text-slate-500">Status</p>
-                                                <p className="font-bold text-slate-800 dark:text-slate-200 text-sm mt-1 flex items-center gap-1.5">
-                                                    {profile.isActive ? (
-                                                        <span className="text-green-600 flex items-center gap-1">✔ Active</span>
-                                                    ) : (
-                                                        <span className="text-red-600">Inactive</span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
-                                                <p className="text-xs text-slate-500">Published</p>
-                                                <p className="font-bold text-slate-800 dark:text-slate-200 text-sm mt-1 flex items-center gap-1.5">
-                                                    {profile.isPublished ? (
-                                                        <span className="text-green-600 flex items-center gap-1">✔ Yes</span>
-                                                    ) : (
-                                                        <span className="text-amber-600">Pending</span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
-                                                <p className="text-xs text-slate-500">Subscription</p>
-                                                <p className="font-bold text-slate-800 dark:text-slate-200 text-sm mt-1 flex items-center gap-1.5">
-                                                    {profile.subscriptionStatus === 'active' ? (
-                                                        <span className="text-green-600 flex items-center gap-1">✔ Active</span>
-                                                    ) : (
-                                                        <span className="text-slate-500 capitalize">{profile.subscriptionStatus || 'None'}</span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
-                                                <p className="text-xs text-slate-500">Created</p>
-                                                <p className="font-bold text-slate-800 dark:text-slate-200 text-sm mt-1">
-                                                    {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
-                                {(isUnlocked || (user && profile.userId === user.id))
+                            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight drop-shadow-sm mb-2">
+                                {(isUnlocked || isOwner)
                                     ? `${profile.firstName} ${profile.lastName || ''}`.trim()
                                     : profile.firstName}
                             </h1>
-                            <p className="text-slate-500 text-sm">
-                                Profile Code: <span className="font-semibold text-primary-600">{profile.profileCode}</span>
+
+                            <p className="text-slate-500 dark:text-slate-400 text-lg md:text-xl font-medium mb-6">
+                                {profile.education && <span>{profile.education}</span>}
+                                {profile.education && profile.occupation && <span className="mx-2 text-slate-300">•</span>}
+                                {profile.occupation && <span>{profile.occupation}</span>}
                             </p>
 
-                            {/* Quick Stats */}
-                            <div className="flex flex-wrap gap-2 mt-4">
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                                 {ageDisplay && (
-                                    <span className="inline-flex items-center gap-1.5 text-sm bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 px-3 py-1.5 rounded-full font-medium">
-                                        <Calendar className="w-3.5 h-3.5" /> {ageDisplay}
-                                    </span>
+                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
+                                        <Calendar className="w-4 h-4 text-primary-500" />
+                                        {ageDisplay}
+                                    </div>
+                                )}
+                                {profile.height && (
+                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
+                                        <Ruler className="w-4 h-4 text-emerald-500" />
+                                        {profile.height}
+                                    </div>
                                 )}
                                 {profile.maritalStatus && (
-                                    <span className="inline-flex items-center gap-1.5 text-sm bg-secondary-50 dark:bg-secondary-900/20 text-secondary-700 dark:text-secondary-300 px-3 py-1.5 rounded-full font-medium capitalize">
-                                        <Heart className="w-3.5 h-3.5" /> {profile.maritalStatus}
-                                    </span>
+                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium capitalize border border-slate-200 dark:border-slate-700">
+                                        <Heart className="w-4 h-4 text-rose-500" />
+                                        {profile.maritalStatus}
+                                    </div>
                                 )}
-                                {profile.currentLocation && (
-                                    <span className="inline-flex items-center gap-1.5 text-sm bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 px-3 py-1.5 rounded-full font-medium">
-                                        <MapPin className="w-3.5 h-3.5" /> {profile.currentLocation}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Details CardContainer (Scrollable) */}
-                        <div className="flex-1 lg:overflow-y-auto min-h-0 scrollbar-thin pr-2">
-                            <div className="card p-6 space-y-0">
-                                {/* Personal Section */}
-                                <Section title="Personal Details">
-                                    <DetailRow icon={Calendar} label="Date of Birth" value={dobDisplay} />
-                                    <DetailRow icon={Ruler} label="Height" value={profile.height} />
-                                    <DetailRow icon={Heart} label="Marital Status" value={profile.maritalStatus} />
-                                    <DetailRow icon={Users} label="Profile For" value={profile.profileFor} />
-                                </Section>
-
-                                {/* Community Section */}
-                                <Section title="Community Details">
-                                    <DetailRow icon={Star} label="Caste" value={profile.caste} iconColor="text-secondary-500" />
-                                    <DetailRow icon={Star} label="Sub-Caste" value={profile.subCaste} iconColor="text-secondary-500" />
-                                    <DetailRow icon={Star} label="Gotra" value={profile.gotra} iconColor="text-secondary-500" />
-                                    <DetailRow icon={Star} label="Rashi" value={profile.rashi} iconColor="text-secondary-500" />
-                                    <DetailRow icon={Star} label="Nakshatra" value={profile.nakshatra} iconColor="text-secondary-500" />
-                                    <DetailRow icon={Star} label="Nadi" value={profile.nadi} iconColor="text-secondary-500" />
-                                    <DetailRow icon={Clock} label="Time of Birth" value={profile.timeOfBirth} iconColor="text-secondary-500" />
-                                </Section>
-
-                                {/* Professional Section */}
-                                <Section title="Professional Details">
-                                    <DetailRow icon={GraduationCap} label="Education" value={profile.education} iconColor="text-blue-500" />
-                                    <DetailRow icon={Briefcase} label="Occupation" value={profile.occupation} iconColor="text-blue-500" />
-                                    <DetailRow icon={Briefcase} label="Annual Income" value={profile.annualIncome} iconColor="text-blue-500" />
-                                    <DetailRow icon={Briefcase} label="Assets" value={profile.assets} iconColor="text-blue-500" />
-                                    <DetailRow icon={MapPin} label="Working Place" value={profile.workingPlace} iconColor="text-blue-500" />
-                                </Section>
-
-                                {/* Family — only when unlocked */}
-                                {isUnlocked && (
-                                    <Section title="Family Details">
-                                        <DetailRow icon={User} label="Father's Name" value={profile.fatherName} iconColor="text-green-500" />
-                                        <DetailRow icon={User} label="Mother's Name" value={profile.motherName} iconColor="text-green-500" />
-                                        <DetailRow icon={Users} label="Brothers" value={profile.brother} iconColor="text-green-500" />
-                                        <DetailRow icon={Users} label="Sisters" value={profile.sister} iconColor="text-green-500" />
-                                    </Section>
-                                )}
-
-                                {/* Contact — only when unlocked */}
-                                {isUnlocked && (
-                                    <Section title="Contact Details">
-                                        <DetailRow icon={Phone} label="Contact Number" value={profile.contactNumber} iconColor="text-emerald-500" />
-                                        <DetailRow icon={MapPin} label="Postal Address" value={profile.postalAddress} iconColor="text-emerald-500" />
-                                        <DetailRow icon={User} label="Sender's Info" value={profile.sendersInfo} iconColor="text-emerald-500" />
-                                    </Section>
-                                )}
-
-                                {/* Expectations */}
-                                {profile.expectations && (
-                                    <Section title="Partner Expectations">
-                                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
-                                            {profile.expectations}
-                                        </p>
-                                    </Section>
-                                )}
-
-                                {/* Locked Notice */}
-                                {!isUnlocked && (
-                                    <div className="bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 border border-primary-100 dark:border-primary-800">
-                                        <div className="flex items-start gap-3">
-                                            <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                                                <Lock className="w-6 h-6 text-primary-600" />
-                                            </div>
-                                            <div>
-                                                <p className="text-base font-bold text-slate-800 dark:text-slate-200">Profile Locked</p>
-                                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-sm">
-                                                    Unlock this profile to view family details, contact information, and more.
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={handleUnlock}
-                                            className="btn btn-primary whitespace-nowrap px-6 py-2.5 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/40"
-                                        >
-                                            Unlock Profile
-                                        </button>
+                                {profile.currentLocation && profile.currentLocation !== 'N/A' && (
+                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
+                                        <MapPin className="w-4 h-4 text-blue-500" />
+                                        {profile.currentLocation}
                                     </div>
                                 )}
                             </div>
@@ -534,7 +369,251 @@ const ProfileDetail = () => {
                     </div>
                 </div>
             </div>
-        </div >
+
+            {/* ─── Main Content Grid ─── */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+                {/* Owner Actions & Dashboard Banner */}
+                {isOwner && (
+                    <div className="mb-8 p-1 rounded-2xl bg-gradient-to-r from-orange-400 via-rose-400 to-pink-500 shadow-xl overflow-hidden">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                            {/* Decorative background element */}
+                            <div className="absolute right-0 top-0 w-64 h-64 bg-gradient-to-br from-orange-50 to-rose-50 dark:from-orange-900/10 dark:to-rose-900/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+
+                            <div className="relative z-10 w-full md:w-auto">
+                                <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-rose-600 dark:from-orange-400 dark:to-rose-400 mb-1">
+                                    My Profile Dashboard
+                                </h2>
+                                <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Manage your profile visibility and settings</p>
+
+                                <div className="flex flex-wrap items-center gap-4 mt-4">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
+                                        <span className="text-xs text-slate-500 font-medium">Status:</span>
+                                        {profile.isActive ? <span className="text-sm font-bold text-emerald-600 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Active</span> : <span className="text-sm font-bold text-rose-600 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Inactive</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
+                                        <span className="text-xs text-slate-500 font-medium">Visible:</span>
+                                        {profile.isPublished ? <span className="text-sm font-bold text-emerald-600 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Yes</span> : <span className="text-sm font-bold text-amber-600 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Pending</span>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex w-full md:w-auto gap-3 relative z-10">
+                                <button
+                                    onClick={() => navigate('/create-profile')}
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg"
+                                >
+                                    <Edit3 className="w-4 h-4" /> Edit Profile
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl font-bold transition-all disabled:opacity-50"
+                                >
+                                    {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+
+                    {/* Left Sidebar (Gallery & Expectations) */}
+                    <div className="lg:col-span-4 space-y-8">
+
+                        {/* More Photos Gallery */}
+                        {photos && photos.length > 1 && (
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-bold text-slate-800 dark:text-white">Photo Gallery</h3>
+                                    <span className="text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md">
+                                        {photos.length} photos
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-3">
+                                    {photos.map((p, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                setSelectedPhoto(idx);
+                                                setIsPhotoModalOpen(true);
+                                            }}
+                                            className={`relative aspect-square rounded-xl overflow-hidden transition-all duration-200 group ${selectedPhoto === idx
+                                                ? 'ring-4 ring-primary-500 ring-offset-2 dark:ring-offset-slate-800 scale-[0.98]'
+                                                : 'hover:opacity-90 hover:ring-2 hover:ring-slate-300 hover:scale-105'}`}
+                                        >
+                                            <img src={p.url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                                            {selectedPhoto !== idx && (
+                                                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300"></div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Partner Expectations (highlighted on the left for visibility) */}
+                        {profile.expectations && (
+                            <div className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-slate-800 dark:to-slate-800/80 rounded-2xl shadow-sm border border-primary-200/50 dark:border-slate-700 p-6 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <Heart className="w-24 h-24 text-primary-600" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="flex items-center gap-2 text-lg font-bold text-primary-900 dark:text-white mb-4">
+                                        <Heart className="w-5 h-5 text-primary-500" />
+                                        Partner Preferences
+                                    </h3>
+                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                                        {profile.expectations}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Profile Locked Banner (Sidebar for Desktop) */}
+                        {!isUnlocked && (
+                            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-xl relative overflow-hidden text-center sm:text-left flex flex-col items-center sm:items-start">
+                                {/* Decor */}
+                                <div className="absolute -right-6 -top-6 w-24 h-24 bg-primary-500/20 rounded-full blur-2xl"></div>
+
+                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-md">
+                                    <Lock className="w-6 h-6 text-primary-400" />
+                                </div>
+                                <h3 className="text-white font-bold text-xl mb-2">Profile is Locked</h3>
+                                <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                                    Unlock this profile to view contact numbers and complete address details. Keep your search moving forward!
+                                </p>
+                                <button
+                                    onClick={handleUnlock}
+                                    className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-primary-500/25 active:scale-[0.98]"
+                                >
+                                    <Shield className="w-5 h-5" /> Unlock Now
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right Main Content (Details Sections) */}
+                    <div className="lg:col-span-8 space-y-6">
+                        {/* Personal & Religious Background */}
+                        <Section title="Personal Background" icon={User} iconColor="text-indigo-500">
+                            <DetailRow icon={Calendar} label="Date of Birth" value={dobDisplay} iconColor="text-indigo-500" />
+                            <DetailRow icon={Clock} label="Time of Birth" value={profile.timeOfBirth} iconColor="text-indigo-500" />
+                            <DetailRow icon={Ruler} label="Height" value={profile.height} iconColor="text-indigo-500" />
+                            <DetailRow icon={Users} label="Profile For" value={profile.profileFor} iconColor="text-indigo-500" />
+                            <DetailRow icon={Heart} label="Marital Status" value={profile.maritalStatus} iconColor="text-rose-500" className="col-span-1 sm:col-span-2" />
+                        </Section>
+
+                        <Section title="Community Details" icon={Star} iconColor="text-amber-500">
+                            <DetailRow icon={Star} label="Caste" value={profile.caste} iconColor="text-amber-500" />
+                            <DetailRow icon={Star} label="Sub-Caste" value={profile.subCaste} iconColor="text-amber-500" />
+                            <DetailRow icon={Star} label="Gotra" value={profile.gotra} iconColor="text-amber-500" />
+                            <DetailRow icon={Star} label="Rashi" value={profile.rashi} iconColor="text-amber-500" />
+                            <DetailRow icon={Star} label="Nakshatra" value={profile.nakshatra} iconColor="text-amber-500" />
+                            <DetailRow icon={Star} label="Nadi" value={profile.nadi} iconColor="text-amber-500" />
+                        </Section>
+
+                        {/* Education & Career */}
+                        <Section title="Education & Career" icon={Briefcase} iconColor="text-blue-500">
+                            <DetailRow icon={GraduationCap} label="Highest Education" value={profile.education} iconColor="text-blue-500" />
+                            <DetailRow icon={Briefcase} label="Current Occupation" value={profile.occupation} iconColor="text-blue-500" />
+                            <DetailRow icon={Briefcase} label="Annual Income" value={profile.annualIncome} iconColor="text-emerald-500" />
+                            <DetailRow icon={MapPin} label="Working Place" value={profile.workingPlace} iconColor="text-blue-500" />
+                            {profile.assets && (
+                                <DetailRow icon={Briefcase} label="Assets / Properties" value={profile.assets} iconColor="text-emerald-500" className="col-span-1 sm:col-span-2" />
+                            )}
+                        </Section>
+
+                        {/* Family details - Always show structure */}
+                        <Section title="Family Details" icon={Users} iconColor="text-purple-500">
+                            <DetailRow icon={User} label="Father's Name" value={profile.fatherName} iconColor="text-purple-500" />
+                            <DetailRow icon={User} label="Mother's Name" value={profile.motherName} iconColor="text-purple-500" />
+                            <DetailRow icon={Users} label="Brothers" value={profile.brother} iconColor="text-purple-500" />
+                            <DetailRow icon={Users} label="Sisters" value={profile.sister} iconColor="text-purple-500" />
+                        </Section>
+
+                        {/* Contact details */}
+                        <Section title="Contact Information" icon={Phone} iconColor="text-emerald-500">
+                            {/* Unlocked fields */}
+                            {isUnlocked ? (
+                                <>
+                                    <DetailRow icon={Phone} label="Primary Contact" value={profile.contactNumber} iconColor="text-emerald-500" />
+                                    <DetailRow icon={MapPin} label="Complete Address" value={profile.postalAddress} iconColor="text-emerald-500" />
+                                </>
+                            ) : (
+                                /* Locked placeholders for protected fields */
+                                <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
+                                            <Lock className="w-5 h-5 text-slate-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Contact Details Hidden</p>
+                                            <p className="text-xs text-slate-500">Phone number and addresses are locked.</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleUnlock}
+                                        className="text-sm font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline underline-offset-2"
+                                    >
+                                        Unlock to View
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Always visible contact fields */}
+                            <DetailRow icon={User} label="Profile Managed By" value={profile.sendersInfo} iconColor="text-slate-600 dark:text-slate-400" />
+                        </Section>
+
+                    </div>
+                </div>
+            </div>
+
+            {/* ─── Photo Viewer Modal ─── */}
+            {isPhotoModalOpen && mainPhoto && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <button
+                        onClick={() => setIsPhotoModalOpen(false)}
+                        className="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 bg-white/10 hover:bg-white/25 rounded-full text-white transition-colors z-50"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+
+                    <div className="relative w-full max-w-5xl h-[80vh] flex items-center justify-center">
+                        <img
+                            src={mainPhoto}
+                            alt={`${profile.firstName}'s photo`}
+                            className="max-w-full max-h-full object-contain rounded-lg"
+                        />
+
+                        {/* Prev / Next Controls for Modal */}
+                        {photos && photos.length > 1 && (
+                            <>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedPhoto((prev) => (prev - 1 + photos.length) % photos.length); }}
+                                    className="absolute left-0 sm:-left-12 top-1/2 -translate-y-1/2 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedPhoto((prev) => (prev + 1) % photos.length); }}
+                                    className="absolute right-0 sm:-right-12 top-1/2 -translate-y-1/2 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"
+                                >
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+
+                                {/* Image Counter */}
+                                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-white/70 font-medium">
+                                    {selectedPhoto + 1} / {photos.length}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 
