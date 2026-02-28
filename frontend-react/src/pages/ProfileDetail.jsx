@@ -5,8 +5,7 @@ import { toast } from 'sonner';
 import {
     ArrowLeft, Heart, MapPin, Briefcase, GraduationCap, Calendar, Ruler,
     Phone, Mail, Users, Star, Clock, Shield, Edit3, User, Loader2, Lock, LogOut,
-    ChevronLeft, ChevronRight, FileText, Download, LayoutDashboard
-    ChevronLeft, ChevronRight, FileText, Download, CheckCircle, AlertCircle, X
+    ChevronLeft, ChevronRight, FileText, Download, LayoutDashboard, CheckCircle, AlertCircle, X
 } from 'lucide-react';
 import { logout, updateUser } from '../redux/slices/authSlice';
 import { getProfileById, unlockProfile, deleteProfile } from '../services/profileService';

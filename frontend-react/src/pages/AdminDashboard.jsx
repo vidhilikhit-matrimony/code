@@ -2,16 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Shield, LayoutDashboard, Users, FileText, CreditCard, LogOut } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, FileText, CreditCard, LogOut, FileDown } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
-import { Shield, LayoutDashboard, Users, FileText, CreditCard, FileDown } from 'lucide-react';
 import api from '../services/api';
 import AdminStats from '../components/admin/AdminStats';
 import UserManagement from '../components/admin/UserManagement';
 import ProfileManagement from '../components/admin/ProfileManagement';
-import SubscriptionManagement from '../components/admin/SubscriptionManagement'; // Extracted existing logic
-import RefreshPageButton from '../components/common/RefreshPageButton';
 import SubscriptionManagement from '../components/admin/SubscriptionManagement';
+import RefreshPageButton from '../components/common/RefreshPageButton';
 import AdminReports from '../components/admin/AdminReports';
 
 const AdminDashboard = () => {

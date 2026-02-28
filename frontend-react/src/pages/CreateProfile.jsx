@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import {
@@ -447,11 +445,10 @@ const CreateProfile = () => {
 
         try {
             const submitData = adminUserId ? { ...formData, adminUserId } : formData;
-            const response = await createProfile(submitData, photoFile, galleryFiles);
             // Pass the S3 keys of existing gallery photos to keep
             // so the backend can remove any that were deleted
             const photosToKeep = existingGallery.map(ph => ph.rawUrl || ph.url);
-            const response = await createProfile(formData, photoFile, galleryFiles, photosToKeep);
+            const response = await createProfile(submitData, photoFile, galleryFiles, photosToKeep);
             if (response.success) {
                 // Sync fresh photoUrl into Redux store so navbar avatar updates immediately
                 if (response.data?.photoUrl) {
