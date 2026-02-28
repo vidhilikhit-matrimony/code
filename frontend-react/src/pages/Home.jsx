@@ -4,76 +4,61 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
     Heart, Users, Shield, Star, Phone, Mail, CheckCircle,
     FileDown, List, PhoneCall, LogOut, Edit3, ChevronRight,
-    MapPin, Award, LayoutDashboard
+    MapPin, Award, LayoutDashboard, Search, Fingerprint, Activity, Sunrise, LogIn
 } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
 import { getMyProfile, getAllProfiles } from '../services/profileService';
 import RefreshPageButton from '../components/common/RefreshPageButton';
+import { FaWhatsapp } from 'react-icons/fa';
 
-// ─── Animations (injected once) ─────────────────────────────────
+// Assumes we've copied the generated logo to src/assets/vidhilikhit_logo.png
+import LogoImg from '../assets/vidhilikhit_logo.png';
+
+// ─── Animations & Custom Styles ─────────────────────────────────
 const STYLES = `
 @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(32px); }
+    from { opacity: 0; transform: translateY(40px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn {
     from { opacity: 0; }
     to   { opacity: 1; }
 }
-@keyframes slideLeft {
-    from { opacity: 0; transform: translateX(-40px); }
-    to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes slideRight {
-    from { opacity: 0; transform: translateX(40px); }
-    to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes pulse-ring {
-    0%   { transform: scale(1);    opacity: 0.8; }
-    100% { transform: scale(1.55); opacity: 0; }
-}
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-10px); }
-}
-@keyframes shimmer {
-    0%   { background-position: -200% center; }
-    100% { background-position:  200% center; }
-}
-@keyframes countUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fadeUp   { animation: fadeUp   0.7s ease both; }
-.animate-fadeIn   { animation: fadeIn   0.6s ease both; }
-.animate-slideL   { animation: slideLeft  0.7s ease both; }
-.animate-slideR   { animation: slideRight 0.7s ease both; }
-.animate-float    { animation: float 3.5s ease-in-out infinite; }
+.animate-fadeUp { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-fadeIn { animation: fadeIn 1s ease both; }
 .delay-100 { animation-delay: 0.1s; }
 .delay-200 { animation-delay: 0.2s; }
 .delay-300 { animation-delay: 0.3s; }
 .delay-400 { animation-delay: 0.4s; }
-.delay-500 { animation-delay: 0.5s; }
-.delay-600 { animation-delay: 0.6s; }
-.shimmer-text {
-    background: linear-gradient(90deg, #FF344C 0%, #FF8C00 50%, #FF344C 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shimmer 3s linear infinite;
+
+/* Traditional Indian Color Palette Elements */
+.text-crimson { color: #9A031E; }
+.bg-crimson { background-color: #9A031E; }
+.border-crimson { border-color: #9A031E; }
+.text-saffron { color: #F05D23; }
+.bg-saffron { background-color: #F05D23; }
+.text-gold { color: #E3B23C; }
+.bg-gold { background-color: #E3B23C; }
+
+/* Mandala Texture overlay pattern */
+.bg-mandala-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.627 0l.83.83-1.66 1.66-.83-.83.83-.83zM0 54.627l.83.83-1.66 1.66-.83-.83.83-.83zm54.627-54.627l-1.66 1.66-.83-.83 1.66-1.66.83.83zm-54.627 54.627l-1.66 1.66-.83-.83 1.66-1.66.83.83zM15.255 0l.83.83-1.66 1.66-.83-.83.83-.83zm0 54.627l.83.83-1.66 1.66-.83-.83.83-.83zm-15.255-39.372l.83.83-1.66 1.66-.83-.83.83-.83zm54.627 0l.83.83-1.66 1.66-.83-.83.83-.83z' fill='%239A031E' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
-.card-hover {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+.premium-shadow {
+    box-shadow: 0 10px 40px -10px rgba(154, 3, 30, 0.15);
 }
-.card-hover:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 20px 40px rgba(255, 52, 76, 0.15);
+.hover-premium-shadow:hover {
+    box-shadow: 0 20px 50px -10px rgba(154, 3, 30, 0.25);
+    transform: translateY(-4px);
+}
+.card-transition {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 `;
 
 // ─── Intersection Observer hook ──────────────────────────────────
-function useInView(threshold = 0.15) {
+function useInView(threshold = 0.1) {
     const ref = useRef(null);
     const [inView, setInView] = useState(false);
     useEffect(() => {
@@ -87,62 +72,28 @@ function useInView(threshold = 0.15) {
     return [ref, inView];
 }
 
-// ─── Animated counter ────────────────────────────────────────────
-function Counter({ target, suffix = '' }) {
-    const [count, setCount] = useState(0);
-    const [ref, inView] = useInView(0.3);
-    useEffect(() => {
-        if (!inView) return;
-        let start = 0;
-        const step = Math.ceil(target / 60);
-        const timer = setInterval(() => {
-            start += step;
-            if (start >= target) { setCount(target); clearInterval(timer); }
-            else setCount(start);
-        }, 20);
-        return () => clearInterval(timer);
-    }, [inView, target]);
-    return <span ref={ref}>{count}{suffix}</span>;
-}
-
-// ─── Section wrapper with fade-in ────────────────────────────────
+// ─── Section wrapper ────────────────────────────────
 function Section({ children, className = '' }) {
     const [ref, inView] = useInView();
     return (
         <div
             ref={ref}
-            className={`transition-all duration-700 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${className}`}
+            className={`transition-all duration-[1000ms] ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'} ${className}`}
         >
             {children}
         </div>
     );
 }
 
-// ─── Suitable Matches Carousel ───────────────────────────────────
-function SuitableMatchesCarousel({ onViewMore }) {
+// ─── Suitable Matches Grid ───────────────────────────────────
+function SuitableMatchesGrid({ onViewMore }) {
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [current, setCurrent] = useState(0);
-    const [perSlide, setPerSlide] = useState(4);
-    const autoRef = useRef(null);
-
-    // Responsive: how many cards per "slide"
-    useEffect(() => {
-        const calc = () => {
-            const w = window.innerWidth;
-            if (w < 640) setPerSlide(1);
-            else if (w < 1024) setPerSlide(2);
-            else setPerSlide(4);
-        };
-        calc();
-        window.addEventListener('resize', calc);
-        return () => window.removeEventListener('resize', calc);
-    }, []);
 
     useEffect(() => {
         (async () => {
             try {
-                const res = await getAllProfiles({ limit: 20 });
+                const res = await getAllProfiles({ limit: 4 });
                 if (res.success && Array.isArray(res.data?.profiles)) {
                     setProfiles(res.data.profiles);
                 }
@@ -151,23 +102,6 @@ function SuitableMatchesCarousel({ onViewMore }) {
         })();
     }, []);
 
-    const totalSlides = Math.max(1, Math.ceil(profiles.length / perSlide));
-
-    const prev = () => setCurrent(c => (c - 1 + totalSlides) % totalSlides);
-    const next = () => setCurrent(c => (c + 1) % totalSlides);
-
-    // Auto-play
-    useEffect(() => {
-        if (profiles.length === 0) return;
-        autoRef.current = setInterval(next, 4000);
-        return () => clearInterval(autoRef.current);
-    }, [profiles.length, totalSlides]);
-
-    const pauseAuto = () => clearInterval(autoRef.current);
-    const resumeAuto = () => { autoRef.current = setInterval(next, 4000); };
-
-    const slice = profiles.slice(current * perSlide, current * perSlide + perSlide);
-
     const getAge = (dob) => {
         if (!dob) return '—';
         const years = Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 3600 * 1000));
@@ -175,154 +109,95 @@ function SuitableMatchesCarousel({ onViewMore }) {
     };
 
     return (
-        <section className="py-20 bg-gradient-to-b from-rose-50/60 to-white dark:from-slate-900 dark:to-slate-800">
+        <section className="py-24 bg-[#FAF8F5] bg-mandala-pattern border-t border-[#E8E2D9]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Heading */}
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl sm:text-5xl font-extrabold shimmer-text">
-                        Suitable Matches
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 mt-3 text-base">
-                        Explore verified profiles from our community
-                    </p>
-                </div>
+                <Section>
+                    <div className="text-center mb-16 max-w-3xl mx-auto">
+                        <div className="flex justify-center mb-4">
+                            <Sunrise className="w-8 h-8 text-saffron opacity-80" />
+                        </div>
+                        <h2 className="text-4xl sm:text-5xl font-extrabold text-[#2A2321] mb-6 font-serif tracking-tight">
+                            Explore Genuine <span className="text-crimson">Profiles</span>
+                        </h2>
+                        <p className="text-lg text-[#5A524D] leading-relaxed">
+                            A curated selection of verified biodatas from the Brahmin and Lingayat communities. Every detail is checked with care, ensuring trust in every connection.
+                        </p>
+                    </div>
+                </Section>
 
                 {loading ? (
-                    /* Skeleton */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {Array.from({ length: perSlide }).map((_, i) => (
-                            <div key={i} className="rounded-2xl bg-white dark:bg-slate-800 shadow animate-pulse overflow-hidden">
-                                <div className="h-52 bg-rose-100 dark:bg-slate-700" />
-                                <div className="p-4 space-y-2">
-                                    <div className="h-3 bg-rose-100 dark:bg-slate-700 rounded w-2/3 mx-auto" />
-                                    <div className="h-5 bg-rose-200 dark:bg-slate-600 rounded w-4/5 mx-auto" />
-                                    <div className="h-3 bg-rose-100 dark:bg-slate-700 rounded w-full mt-3" />
-                                </div>
-                            </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="rounded-xl bg-[#E8E2D9] animate-pulse h-96"></div>
                         ))}
                     </div>
                 ) : profiles.length === 0 ? (
-                    <div className="text-center py-12 text-slate-400">No profiles available yet.</div>
-                ) : (
-                    <div
-                        className="relative"
-                        onMouseEnter={pauseAuto}
-                        onMouseLeave={resumeAuto}
-                    >
-                        {/* Left Arrow */}
-                        <button
-                            onClick={prev}
-                            className="absolute -left-5 top-1/2 -translate-y-1/2 z-10
-                                       w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-rose-100 dark:border-slate-700
-                                       flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-all"
-                            aria-label="Previous"
-                        >
-                            <ChevronRight className="w-5 h-5 rotate-180" />
-                        </button>
-
-                        {/* Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 transition-all duration-500">
-                            {slice.map((profile, idx) => (
-                                <ProfileMatchCard key={profile._id || idx} profile={profile} getAge={getAge} />
-                            ))}
-                        </div>
-
-                        {/* Right Arrow */}
-                        <button
-                            onClick={next}
-                            className="absolute -right-5 top-1/2 -translate-y-1/2 z-10
-                                       w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-rose-100 dark:border-slate-700
-                                       flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-all"
-                            aria-label="Next"
-                        >
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
-
-                        {/* Dots */}
-                        <div className="flex justify-center gap-2 mt-8">
-                            {Array.from({ length: totalSlides }).map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setCurrent(i)}
-                                    className={`rounded-full transition-all ${i === current
-                                        ? 'w-6 h-2.5 bg-rose-500'
-                                        : 'w-2.5 h-2.5 bg-rose-200 hover:bg-rose-300'}`}
-                                    aria-label={`Go to slide ${i + 1}`}
-                                />
-                            ))}
-                        </div>
+                    <div className="text-center py-16 text-[#5A524D] bg-white rounded-2xl border border-[#E8E2D9] premium-shadow">
+                        Log in to view new verified profiles available in your community.
                     </div>
+                ) : (
+                    <Section>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {profiles.slice(0, 4).map((profile, idx) => (
+                                <ProfileCard key={profile._id || idx} profile={profile} getAge={getAge} />
+                            ))}
+                        </div>
+                    </Section>
                 )}
 
-                {/* View More */}
-                <div className="text-center mt-10">
-                    <button
-                        onClick={onViewMore}
-                        className="px-10 py-4 rounded-xl font-bold text-base
-                                   bg-gradient-to-r from-rose-500 to-orange-500 text-white
-                                   hover:from-rose-600 hover:to-orange-600 shadow-lg shadow-rose-200
-                                   transition-all hover:scale-105 active:scale-95"
-                    >
-                        View More Profiles
-                    </button>
-                </div>
+                <Section>
+                    <div className="text-center mt-16">
+                        <button
+                            onClick={onViewMore}
+                            className="inline-flex items-center gap-3 px-10 py-4 rounded-md font-bold text-[#FAF8F5] bg-[#2A2321] hover:bg-crimson transition-colors card-transition shadow-lg"
+                        >
+                            View Full Profile Details <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                </Section>
             </div>
         </section>
     );
 }
 
-// ─── Single Profile Card ──────────────────────────────────────────
-function ProfileMatchCard({ profile, getAge }) {
+function ProfileCard({ profile, getAge }) {
     const firstPhoto = profile.photos?.[0]?.url || profile.photoUrl || null;
     const [imgError, setImgError] = useState(false);
 
-    const fields = [
-        { label: 'AGE', value: getAge(profile.dateOfBirth) },
-        { label: 'HEIGHT', value: profile.height || '—' },
-        { label: 'CASTE', value: profile.caste || '—', highlight: true },
-    ];
-
     return (
-        <div className="card-hover bg-white dark:bg-slate-800 rounded-2xl shadow-md overflow-hidden border border-rose-50 dark:border-slate-700 flex flex-col">
-            {/* Photo */}
-            <div className="relative h-52 bg-gradient-to-br from-rose-100 to-orange-100 dark:from-slate-700 dark:to-slate-600">
+        <div className="bg-white rounded-xl border border-[#E8E2D9] overflow-hidden flex flex-col hover-premium-shadow card-transition cursor-pointer">
+            <div className="relative h-64 bg-[#FAF8F5] overflow-hidden">
                 {firstPhoto && !imgError ? (
                     <img
                         src={firstPhoto}
-                        alt={profile.firstName || 'Profile'}
-                        className="w-full h-full object-cover"
+                        alt="Profile"
+                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                         onError={() => setImgError(true)}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <div className="text-5xl opacity-40">👤</div>
+                    <div className="w-full h-full flex flex-col items-center justify-center text-[#B0A8A3]">
+                        <Users className="w-16 h-16 mb-2 opacity-30" />
                     </div>
                 )}
+                <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm text-crimson border border-crimson/20 text-[10px] font-bold px-3 py-1.5 rounded uppercase tracking-wider shadow-sm">
+                    ID: {profile.profileCode || 'VERIFIED'}
+                </div>
             </div>
 
-            {/* Info */}
-            <div className="p-4 flex flex-col flex-1">
-                {/* Profile ID */}
-                <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase text-center mb-1">
-                    Profile ID: {profile.profileCode || profile._id?.slice(-6).toUpperCase() || '——'}
-                </p>
-
-                {/* Name */}
-                <h3 className="text-center font-bold text-slate-900 dark:text-white text-base mb-3 leading-tight">
-                    {profile.firstName || 'Groom/Bride'}{' '}
-                    {profile.isUnlocked ? (profile.lastName || '') : ''}
+            <div className="p-6 flex flex-col flex-1 border-t-4 border-crimson">
+                <h3 className="font-bold text-[#2A2321] text-xl mb-4 font-serif">
+                    {profile.firstName || 'Member'} {profile.isUnlocked ? profile.lastName : ''}
                 </h3>
 
-                {/* Stats row */}
-                <div className="grid grid-cols-3 gap-1 border-t border-slate-100 dark:border-slate-700 pt-3 mt-auto">
-                    {fields.map((f) => (
-                        <div key={f.label} className="text-center">
-                            <p className="text-[9px] font-bold tracking-widest text-slate-400 uppercase mb-0.5">{f.label}</p>
-                            <p className={`text-xs font-bold ${f.highlight ? 'text-rose-500' : 'text-slate-700 dark:text-slate-200'}`}>
-                                {String(f.value).length > 10 ? String(f.value).slice(0, 10) + '…' : f.value}
-                            </p>
-                        </div>
-                    ))}
+                <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm text-[#5A524D] mt-auto">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-[#B0A8A3] tracking-wider mb-1">Age / Height</span>
+                        <span className="font-semibold">{getAge(profile.dateOfBirth)} yrs, {profile.height || '—'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-[#B0A8A3] tracking-wider mb-1">Community</span>
+                        <span className="font-semibold text-crimson">{profile.caste || '—'}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -341,16 +216,11 @@ function DownloadModal({ isOpen, onClose }) {
     if (!isOpen) return null;
 
     const handleClose = () => {
-        setCommunity('');
-        setGender('');
-        setError('');
-        setIsDownloading(false);
-        onClose();
+        setCommunity(''); setGender(''); setError(''); setIsDownloading(false); onClose();
     };
 
     const handleDownload = async () => {
-        setError('');
-        setIsDownloading(true);
+        setError(''); setIsDownloading(true);
         try {
             const query = new URLSearchParams({ community, gender }).toString();
             const url = `${API_BASE_URL}/reports/profiles/public?${query}`;
@@ -360,14 +230,9 @@ function DownloadModal({ isOpen, onClose }) {
                 let msg = 'Download failed. Please try again.';
                 try {
                     const body = await response.json();
-                    if (body?.message?.toLowerCase().includes('no published profiles')) {
-                        msg = 'No profiles found for the selected filters. Please try a different combination.';
-                    } else {
-                        msg = body?.message || msg;
-                    }
+                    msg = body?.message || msg;
                 } catch { }
-                setError(msg);
-                return;
+                setError(msg); return;
             }
 
             const blob = await response.blob();
@@ -376,294 +241,83 @@ function DownloadModal({ isOpen, onClose }) {
             const cd = response.headers.get('content-disposition');
             const match = cd?.match(/filename="?([^"]+)"?/i);
             link.href = downloadUrl;
-            link.download = match ? match[1] : `VidhiLikhit_${community}_${gender}_Profiles.pdf`;
+            link.download = match ? match[1] : `VidhiLikhit_Profiles.pdf`;
             link.target = '_blank';
             document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            link.click(); document.body.removeChild(link);
             window.URL.revokeObjectURL(downloadUrl);
             handleClose();
         } catch (err) {
-            setError('Network error. Please check your connection.');
+            setError('Network error. Please check your connection and try again.');
         } finally {
             setIsDownloading(false);
         }
     };
 
     return (
-        <div
-            style={{
-                position: 'fixed', inset: 0, zIndex: 9999,
-                background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
-            }}
-            onClick={handleClose}
-        >
-            <div
-                style={{
-                    background: '#fff', borderRadius: '16px', padding: '32px',
-                    width: '100%', maxWidth: '420px', boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
-                    position: 'relative'
-                }}
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Close Button */}
-                <button
-                    onClick={handleClose}
-                    style={{
-                        position: 'absolute', top: '16px', right: '16px',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        fontSize: '20px', color: '#999', lineHeight: 1
-                    }}
-                >✕</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#2A2321]/80 backdrop-blur-sm" onClick={handleClose}>
+            <div className="bg-[#FAF8F5] rounded-xl p-8 w-full max-w-lg shadow-[0_20px_60px_rgba(0,0,0,0.5)] relative border-t-8 border-crimson" onClick={e => e.stopPropagation()}>
+                <button onClick={handleClose} className="absolute top-4 right-4 text-[#B0A8A3] hover:text-crimson transition-colors p-2">
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
 
-                {/* Title */}
-                <h2 style={{ textAlign: 'center', fontSize: '22px', fontWeight: 800, color: '#FE6F61', marginBottom: '8px' }}>
-                    Download Biodata Profiles
-                </h2>
-                <p style={{ textAlign: 'center', color: '#888', fontSize: '13px', marginBottom: '24px' }}>
-                    Select community and gender to get the PDF
+                <div className="w-16 h-16 bg-white border border-[#E8E2D9] rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                    <FileDown className="w-8 h-8 text-crimson" />
+                </div>
+
+                <h2 className="text-2xl font-bold text-[#2A2321] mb-2 text-center font-serif">Download Verified PDFs</h2>
+                <p className="text-[#5A524D] text-sm mb-8 text-center leading-relaxed">
+                    Instantly download trusted, detailed biodata PDFs. A bright ray of hope for finding your perfect match in your community.
                 </p>
 
-                {/* Community Select */}
-                <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#FE6F61', marginBottom: '6px' }}>Community</label>
-                    <select
-                        value={community}
-                        onChange={e => { setCommunity(e.target.value); setError(''); }}
-                        style={{
-                            width: '100%', padding: '10px 14px', borderRadius: '10px',
-                            border: community ? '1.5px solid #FE6F61' : '1.5px solid #e2e8f0',
-                            fontSize: '14px', outline: 'none',
-                            appearance: 'none', cursor: 'pointer', background: '#fff'
-                        }}
-                    >
-                        <option value="all">All Communities</option>
-                        <option value="brahmin">Brahmin</option>
-                        <option value="lingayat">Lingayat</option>
-                    </select>
-                </div>
-
-                {/* Gender Select */}
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#FE6F61', marginBottom: '6px' }}>Gender</label>
-                    <select
-                        value={gender}
-                        onChange={e => { setGender(e.target.value); setError(''); }}
-                        style={{
-                            width: '100%', padding: '10px 14px', borderRadius: '10px',
-                            border: gender ? '1.5px solid #FE6F61' : '1.5px solid #e2e8f0',
-                            fontSize: '14px', outline: 'none',
-                            appearance: 'none', cursor: 'pointer', background: '#fff'
-                        }}
-                    >
-                        <option value="all">All Genders</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                </div>
-
-                {/* Error */}
-                {error && (
-                    <div style={{ marginBottom: '16px', padding: '10px 14px', borderRadius: '8px', background: '#fff5f5', border: '1px solid #fed7d7', color: '#c53030', fontSize: '13px' }}>
-                        {error}
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-xs font-bold text-[#5A524D] mb-2 uppercase tracking-wide">Select Community</label>
+                        <select
+                            value={community} onChange={e => { setCommunity(e.target.value); setError(''); }}
+                            className="w-full px-4 py-3 rounded-md border border-[#E8E2D9] bg-white text-[#2A2321] focus:outline-none focus:border-crimson focus:ring-1 focus:ring-crimson transition-colors"
+                        >
+                            <option value="all">All Communities</option>
+                            <option value="brahmin">Brahmin</option>
+                            <option value="lingayat">Lingayat</option>
+                        </select>
                     </div>
-                )}
 
-                {/* Download Button */}
-                <button
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                    style={{
-                        width: '100%', padding: '12px', borderRadius: '10px',
-                        border: 'none', cursor: isDownloading ? 'not-allowed' : 'pointer',
-                        background: isDownloading ? '#ffd4d0' : 'linear-gradient(135deg, #FE6F61, #FF8C00)',
-                        color: '#fff', fontWeight: 800, fontSize: '15px',
-                        transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                    }}
-                >
-                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    {isDownloading ? 'Downloading...' : 'Download Profiles PDF'}
-                </button>
+                    <div>
+                        <label className="block text-xs font-bold text-[#5A524D] mb-2 uppercase tracking-wide">Select Gender</label>
+                        <select
+                            value={gender} onChange={e => { setGender(e.target.value); setError(''); }}
+                            className="w-full px-4 py-3 rounded-md border border-[#E8E2D9] bg-white text-[#2A2321] focus:outline-none focus:border-crimson focus:ring-1 focus:ring-crimson transition-colors"
+                        >
+                            <option value="all">All Genders</option>
+                            <option value="male">Groom</option>
+                            <option value="female">Bride</option>
+                        </select>
+                    </div>
+
+                    {error && <div className="text-[#9A031E] text-sm p-4 rounded-md font-medium border border-[#9A031E]/30 bg-[#9A031E]/5">{error}</div>}
+
+                    <button
+                        onClick={handleDownload} disabled={isDownloading}
+                        className="w-full py-4 rounded-md font-bold text-white bg-crimson hover:bg-[#7A0217] shadow-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2 tracking-wide uppercase text-sm mt-4"
+                    >
+                        {isDownloading ? 'Structuring PDF...' : 'Download Profiles Now'}
+                    </button>
+                </div>
             </div>
         </div>
     );
 }
 
-// ─── Download Profiles Section ───────────────────────────────────
-function DownloadProfilesSection() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [sectionRef, inView] = useInView();
-
-    const features = [
-        'Separate downloads for Brahmin & Lingayat profiles',
-        'Verified details with authentic information',
-        'Family & educational background included',
-        'Contact the website owner for selected matches',
-    ];
-
-    return (
-        <>
-            <section
-                ref={sectionRef}
-                style={{
-                    background: 'linear-gradient(135deg, #fff9f5 0%, #fff0e8 50%, #ffedf0 100%)',
-                    padding: '80px 0',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}
-            >
-                {/* Decorative background blobs */}
-                <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255,110,97,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-                <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(255,140,0,0.1) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-
-                <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-                    {/* Section top label */}
-                    <div
-                        className={`transition-all duration-700 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-                        style={{ textAlign: 'center', marginBottom: '32px' }}
-                    >
-                        <span style={{
-                            fontSize: '12px', fontWeight: 700, letterSpacing: '3px',
-                            textTransform: 'uppercase', color: '#FE6F61', opacity: 0.8
-                        }}>Community-Based Matches</span>
-                    </div>
-
-                    {/* Main Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '48px', alignItems: 'center' }}>
-
-                        {/* Left: Text Content */}
-                        <div className={`transition-all duration-700 delay-100 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
-                            <h2 style={{
-                                fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 900, lineHeight: 1.15,
-                                background: 'linear-gradient(135deg, #FF2754, #FF6600)',
-                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text', marginBottom: '14px'
-                            }}>
-                                Download Verified Brahmin &amp; Lingayat Profiles Instantly
-                            </h2>
-
-                            <p style={{
-                                fontSize: '16px', fontWeight: 600, lineHeight: 1.4,
-                                background: 'linear-gradient(135deg, #FF2754, #FF6600)',
-                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text', marginBottom: '20px'
-                            }}>
-                                A Bright Ray of Hope — Find Your Perfect Match With Trusted Biodata PDFs.
-                            </p>
-
-                            <div style={{ color: '#555', marginBottom: '24px', lineHeight: 1.7 }}>
-                                <p style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
-                                    Looking For The Right Life Partner In Your Own Community?
-                                </p>
-                                <p style={{ fontSize: '14px', marginBottom: '6px' }}>
-                                    With VidhiLikhit, you can instantly download verified biodata PDFs of Brahmin and Lingayat profiles — complete with personal details, education, and profession details.
-                                </p>
-                                <p style={{ fontSize: '14px' }}>
-                                    Shortlist your favourites, and connect directly through us for the next step.
-                                </p>
-                            </div>
-
-                            {/* Feature Checklist */}
-                            <div style={{ marginBottom: '32px' }}>
-                                {features.map((feature, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                                        <div style={{
-                                            width: '24px', height: '24px', borderRadius: '50%',
-                                            background: '#e8f5e9', flexShrink: 0,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                        }}>
-                                            <svg width="14" height="14" viewBox="0 0 20 20" fill="#22c55e">
-                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <span style={{ color: '#444', fontSize: '14px' }}>{feature}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* CTA Button */}
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '10px',
-                                    padding: '14px 32px', borderRadius: '12px',
-                                    border: 'none', cursor: 'pointer',
-                                    background: '#FE6F61',
-                                    color: '#fff', fontWeight: 800, fontSize: '16px',
-                                    boxShadow: '0 8px 24px rgba(254,111,97,0.35)',
-                                    transition: 'all 0.3s'
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.background = '#e5594a'; e.currentTarget.style.transform = 'scale(1.04)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = '#FE6F61'; e.currentTarget.style.transform = 'scale(1)'; }}
-                            >
-                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Download PDF
-                            </button>
-                        </div>
-
-                        {/* Right: Decorative Visual */}
-                        <div className={`transition-all duration-700 delay-200 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}
-                            style={{ display: 'flex', justifyContent: 'center' }}
-                        >
-                            <div style={{ position: 'relative', width: '100%', maxWidth: '360px' }}>
-                                {/* Rotated accent card */}
-                                <div style={{
-                                    position: 'absolute', inset: 0, background: '#FFD5C2',
-                                    borderRadius: '20px', transform: 'rotate(8deg)',
-                                    top: '-10px', right: '-10px'
-                                }} />
-                                {/* Main card */}
-                                <div style={{
-                                    position: 'relative', borderRadius: '20px',
-                                    background: 'linear-gradient(135deg, #fff5f0, #fff0f5)',
-                                    boxShadow: '0 16px 48px rgba(255,111,97,0.18)',
-                                    padding: '48px 32px', textAlign: 'center', zIndex: 1
-                                }}>
-                                    <div style={{ fontSize: '80px', marginBottom: '16px', lineHeight: 1 }}>👫</div>
-                                    <div style={{
-                                        fontSize: '20px', fontWeight: 800, color: '#333', marginBottom: '8px'
-                                    }}>Community Profiles</div>
-                                    <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.6 }}>
-                                        Brahmin &amp; Lingayat<br />Verified Biodata PDFs
-                                    </div>
-                                    {/* Mini stats */}
-                                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '24px' }}>
-                                        {[{ val: '10K+', label: 'Profiles' }, { val: '400+', label: 'Weddings' }].map(s => (
-                                            <div key={s.label} style={{
-                                                background: '#fff', borderRadius: '10px',
-                                                padding: '10px 18px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
-                                            }}>
-                                                <div style={{ fontSize: '18px', fontWeight: 900, color: '#FE6F61' }}>{s.val}</div>
-                                                <div style={{ fontSize: '11px', color: '#999' }}>{s.label}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
-
-            {/* Download Modal */}
-            <DownloadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-        </>
-    );
-}
-
 // ─── Main Component ──────────────────────────────────────────────
-
 const Home = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { isAuthenticated, user } = useSelector((state) => state.auth);
     const [hasProfile, setHasProfile] = useState(false);
+    const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -671,294 +325,186 @@ const Home = () => {
             try {
                 const res = await getMyProfile();
                 if (res.success && res.data) setHasProfile(true);
-            } catch { /* no profile yet */ }
+            } catch { /* no profile */ }
         })();
     }, [isAuthenticated]);
 
     const handleLogout = () => { dispatch(logout()); navigate('/'); };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-900 overflow-x-hidden">
+        <div className="min-h-screen bg-white font-sans text-[#2A2321] selection:bg-crimson selection:text-white">
             <style>{STYLES}</style>
 
-            {/* ── NAVBAR STRIP ── */}
-            {isAuthenticated && (
-                <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2
-                                bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg
-                                border-b border-white/30 shadow-sm">
-                    <button
-                        onClick={handleLogout}
-                        className="font-bold text-lg shimmer-text tracking-wide focus:outline-none"
-                    >
-                        VidhiLikhit
-                    </button>
-                    <div className="flex items-center gap-3">
-                        {!user?.isAdmin && (
-                            user?.subscriptionStatus === 'active' && user?.remainingViews > 0 ? (
-                                <div
-                                    className="hidden sm:flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                                               bg-rose-50 text-rose-600 border border-rose-200 cursor-pointer"
-                                    onClick={() => navigate('/payment')}
-                                >
-                                    <Star className="w-3 h-3 mr-1" />
-                                    {user.remainingViews} Unlocks Left
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => navigate('/payment')}
-                                    className="hidden sm:flex items-center px-4 py-1.5 rounded-full text-xs font-bold
-                                               bg-gradient-to-r from-rose-500 to-orange-500 text-white
-                                               hover:from-rose-600 hover:to-orange-600 shadow-md transition-all hover:scale-105 active:scale-95"
-                                >
-                                    <Star className="w-3.5 h-3.5 mr-1" />
-                                    {user?.subscriptionStatus === 'active' && user?.remainingViews === 0 ? 'Renew Subscription' : 'Buy Subscription'}
-                                </button>
-                            )
-                        )}
-                        <RefreshPageButton />
-
-                        {user?.isAdmin && (
-                            <button
-                                onClick={() => navigate('/admin/dashboard')}
-                                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
-                                           bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100
-                                           transition-all shadow-sm"
-                            >
-                                <LayoutDashboard className="w-4 h-4" /> Admin Dashboard
-                            </button>
-                        )}
-
-                        <div
-                            className="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full
-                                       bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700
-                                       hover:shadow-md transition-all text-sm font-medium"
-                            onClick={() => navigate(hasProfile ? '/profile/me' : '/create-profile')}
-                        >
-                            {user?.photoUrl ? (
-                                <img src={user.photoUrl} alt={user.firstName} className="w-6 h-6 rounded-full object-cover" />
-                            ) : (
-                                <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 text-xs font-bold">
-                                    {(user?.firstName || user?.username || 'U').charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                            <span className="text-slate-700 dark:text-slate-200">{user?.firstName || user?.username}</span>
+            {/* ── HEADER NAVIGATION ── */}
+            <div className="fixed top-0 left-0 right-0 z-[90] flex items-center justify-between px-6 py-3 bg-white border-b border-[#E8E2D9] shadow-sm">
+                <button onClick={() => navigate('/')} className="flex items-center gap-3 focus:outline-none">
+                    <img src={LogoImg} alt="VidhiLikhit Logo" className="h-12 w-auto object-contain" />
+                    <div className="hidden sm:flex flex-col text-left">
+                        <span className="font-serif font-bold text-xl leading-none text-[#2A2321]">VidhiLikhit</span>
+                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#B0A8A3] mt-1">Matrimony</span>
+                    </div>
+                </button>
+                <div className="flex items-center gap-4">
+                    {!user?.isAdmin && user?.subscriptionStatus === 'active' && (
+                        <div className="hidden md:flex items-center px-4 py-2 rounded-md bg-[#FAF8F5] border border-[#E8E2D9] text-[#5A524D] text-sm font-bold">
+                            <Star className="w-4 h-4 mr-2 text-gold" /> {user.remainingViews} Unlocks
                         </div>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium
-                                       border border-slate-200 hover:border-rose-300 hover:text-rose-600
-                                       transition-all text-slate-600 dark:text-slate-300"
-                        >
-                            <LogOut className="w-3.5 h-3.5" /> Logout
+                    )}
+                    <RefreshPageButton />
+
+                    {user?.isAdmin && (
+                        <button onClick={() => navigate('/admin/dashboard')} className="hidden lg:flex items-center text-sm font-bold text-[#5A524D] hover:text-crimson border border-[#E8E2D9] px-4 py-2 rounded-md">
+                            <LayoutDashboard className="w-4 h-4 mr-2" /> Admin Console
                         </button>
-                    </div>
-                </div>
-            )}
+                    )}
 
-            {/* ══════════════════════════════════════════════════
-                SECTION 1: HERO
-            ══════════════════════════════════════════════════ */}
-            <section className="relative min-h-screen flex items-center overflow-hidden">
-                {/* Background gradient + decorative circles */}
-                <div className="absolute inset-0 bg-gradient-to-br from-rose-50 via-orange-50 to-pink-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900" />
-                <div className="absolute top-20 right-10 w-72 h-72 bg-rose-200/30 rounded-full blur-3xl" />
-                <div className="absolute bottom-20 left-10 w-96 h-96 bg-orange-200/20 rounded-full blur-3xl" />
-                {/* Dot grid */}
-                <div className="absolute inset-0 opacity-30"
-                    style={{ backgroundImage: 'radial-gradient(circle, #FF344C22 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-
-                <div className={`relative z-10 w-full ${isAuthenticated ? 'pt-16' : 'pt-0'}`}>
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid lg:grid-cols-2 gap-12 items-center py-16">
-
-                            {/* Left: Text */}
-                            <div className="space-y-6">
-                                <div className="animate-fadeUp delay-100 inline-flex items-center gap-2 px-4 py-2 rounded-full
-                                               bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300
-                                               text-sm font-semibold border border-rose-200 dark:border-rose-800">
-                                    <Heart className="w-4 h-4 fill-current" />
-                                    Trusted Matrimony for Brahmin & Lingayat
-                                </div>
-
-                                <h1 className="animate-fadeUp delay-200 text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight text-slate-900 dark:text-white">
-                                    Find Your{' '}
-                                    <span className="shimmer-text">Perfect</span>
-                                    <br />Match
-                                </h1>
-
-                                <p className="animate-fadeUp delay-300 text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
-                                    Built on <strong>trust, tradition, and love.</strong> A bright ray of hope for
-                                    families seeking their perfect life partner.
-                                </p>
-
-                                <div className="animate-fadeUp delay-400 flex flex-wrap gap-4">
-                                    {isAuthenticated && hasProfile ? (
-                                        <>
-                                            <button
-                                                onClick={() => navigate('/create-profile')}
-                                                className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base
-                                                           bg-gradient-to-r from-rose-500 to-orange-500 text-white
-                                                           hover:from-rose-600 hover:to-orange-600 shadow-lg shadow-rose-200
-                                                           transition-all hover:scale-105 active:scale-95"
-                                            >
-                                                <Edit3 className="w-5 h-5" /> Edit Profile
-                                            </button>
-                                            <button
-                                                onClick={() => navigate('/login')}
-                                                className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base
-                                                           border-2 border-rose-400 text-rose-600 dark:text-rose-400
-                                                           hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
-                                            >
-                                                Login <ChevronRight className="w-5 h-5" />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={() => navigate(isAuthenticated ? '/create-profile' : '/register')}
-                                                className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base
-                                                           bg-gradient-to-r from-rose-500 to-orange-500 text-white
-                                                           hover:from-rose-600 hover:to-orange-600 shadow-lg shadow-rose-200
-                                                           transition-all hover:scale-105 active:scale-95"
-                                            >
-                                                {isAuthenticated ? 'Create Profile' : 'Registration Free'}
-                                                <ChevronRight className="w-5 h-5" />
-                                            </button>
-                                            <button
-                                                onClick={() => navigate('/login')}
-                                                className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base
-                                                           border-2 border-rose-400 text-rose-600 dark:text-rose-400
-                                                           hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
-                                            >
-                                                Login <ChevronRight className="w-5 h-5" />
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-
-                                {/* Quick stats */}
-                                <div className="animate-fadeUp delay-500 flex flex-wrap gap-6 pt-4">
-                                    {[
-                                        { val: 400, suffix: '+', label: 'Weddings' },
-                                        { val: 10000, suffix: '+', label: 'Profiles' },
-                                        { val: 7, suffix: ' yrs', label: 'Trusted Since 2017' },
-                                    ].map((s, i) => (
-                                        <div key={i} className="text-center">
-                                            <div className="text-2xl font-extrabold text-rose-600 dark:text-rose-400">
-                                                <Counter target={s.val} suffix={s.suffix} />
-                                            </div>
-                                            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{s.label}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Right: Decorative illustration */}
-                            <div className="hidden lg:flex items-center justify-center relative">
-                                <div className="animate-float relative w-80 h-80">
-                                    {/* Outer ring */}
-                                    <div className="absolute inset-0 rounded-full border-4 border-rose-200/60 animate-ping" style={{ animationDuration: '3s' }} />
-                                    {/* Inner circle */}
-                                    <div className="absolute inset-4 rounded-full bg-gradient-to-br from-rose-100 to-orange-100 dark:from-rose-900/30 dark:to-orange-900/30 flex items-center justify-center shadow-2xl">
-                                        <div className="text-center space-y-3">
-                                            <div className="text-7xl font-black shimmer-text">❤</div>
-                                            <div className="text-lg font-bold text-slate-700 dark:text-slate-200">VidhiLikhit</div>
-                                            <div className="text-sm text-slate-500 dark:text-slate-400">Matrimony</div>
-                                        </div>
+                    {isAuthenticated ? (
+                        <>
+                            <div
+                                onClick={() => navigate(hasProfile ? '/profile/me' : '/create-profile')}
+                                className="flex items-center gap-3 cursor-pointer py-1.5 px-3 pr-4 rounded-md border border-[#E8E2D9] bg-[#FAF8F5] hover:border-[#B0A8A3] transition-colors"
+                            >
+                                {user?.photoUrl ? (
+                                    <img src={user.photoUrl} alt="User" className="w-8 h-8 rounded-full border border-[#E8E2D9] object-cover" />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-crimson flex items-center justify-center text-white font-bold text-sm">
+                                        {(user?.firstName || 'U')[0]}
                                     </div>
-                                    {/* Floating badges */}
-                                    {[
-                                        { label: '✓ Verified', top: '0%', left: '70%', cls: 'bg-green-100 text-green-700 border-green-200' },
-                                        { label: '🔒 Private', top: '75%', left: '-5%', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
-                                        { label: '💍 Matches', top: '80%', left: '70%', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
-                                        { label: '🛡 Trusted', top: '5%', left: '-5%', cls: 'bg-orange-100 text-orange-700 border-orange-200' },
-                                    ].map((b, i) => (
-                                        <div key={i}
-                                            className={`absolute px-3 py-1.5 rounded-full text-xs font-bold border shadow-md ${b.cls}`}
-                                            style={{ top: b.top, left: b.left }}
-                                        >
-                                            {b.label}
-                                        </div>
-                                    ))}
-                                </div>
+                                )}
+                                <span className="font-semibold text-sm hidden sm:block">{user?.firstName || 'Dashboard'}</span>
+                            </div>
+                            <button onClick={handleLogout} className="p-2 border border-[#E8E2D9] rounded-md text-[#5A524D] hover:text-crimson hover:bg-[#FAF8F5] transition-colors bg-white">
+                                <LogOut className="w-5 h-5" />
+                            </button>
+                        </>
+                    ) : (
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => navigate('/login')} className="hidden sm:block font-bold text-sm text-[#5A524D] hover:text-crimson uppercase tracking-wider px-2">
+                                Login
+                            </button>
+                            <button onClick={() => navigate('/register')} className="px-6 py-2.5 rounded-md bg-crimson text-white font-bold text-sm uppercase tracking-wider hover:bg-[#7A0217] shadow-md transition-colors">
+                                Register Free
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── INFO-DENSE HERO SECTION ── */}
+            <section className={`relative bg-black overflow-hidden ${isAuthenticated ? 'pt-[72px]' : 'pt-[72px]'}`}>
+                {/* Traditional Background Image (Darkened for text readability) */}
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src="https://images.unsplash.com/photo-1621801306185-8c0ccf9c8eb8?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                        alt="Traditional Hindu Marriage Ritual"
+                        className="w-full h-full object-cover opacity-40 focus:opacity-50 object-center"
+                    />
+                    {/* Deep gradient overlay merging left to right for content placement */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#2A2321]/80 via-transparent to-transparent" />
+                </div>
+
+                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 flex items-center min-h-[85vh]">
+                    <div className="max-w-2xl animate-fadeUp space-y-8">
+
+                        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-sm bg-crimson/90 backdrop-blur-sm border-l-4 border-gold text-white text-xs font-bold uppercase tracking-[0.2em] shadow-lg">
+                            <Heart className="w-4 h-4 fill-white text-white" />
+                            Trusted Matrimony Only For Brahmin & Lingayat Communities
+                        </div>
+
+                        <h1 className="text-5xl sm:text-6xl font-serif font-bold leading-[1.1] text-white my-6">
+                            A Bright Ray of Hope. <br />
+                            <span className="text-gold">Built on trust, tradition, and love.</span>
+                        </h1>
+
+                        <p className="text-lg text-gray-200 leading-relaxed max-w-xl font-medium border-l border-white/20 pl-6">
+                            Finding your perfect life partner starts here. We bring traditional matchmaking into the modern world—secure, personalized, and effortless. Start exploring genuine profiles, connect with compatible matches, and take the first step toward your happily ever after.
+                        </p>
+
+                        <div className="flex flex-wrap gap-4 pt-6">
+                            <button onClick={() => navigate(isAuthenticated ? (hasProfile ? '/profiles' : '/create-profile') : '/register')} className="px-10 py-4 rounded-md bg-saffron hover:bg-[#D54A18] text-white font-bold uppercase tracking-wider text-sm card-transition shadow-lg flex items-center gap-2">
+                                {isAuthenticated ? 'Browse Matches' : 'Create Your Profile Free'}
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                            {!isAuthenticated && (
+                                <button onClick={() => navigate('/login')} className="px-10 py-4 rounded-md bg-white hover:bg-gray-100 text-[#2A2321] font-bold uppercase tracking-wider text-sm card-transition shadow-lg flex items-center gap-2">
+                                    <LogIn className="w-4 h-4" /> Login
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-6 pt-10 mt-10 border-t border-white/20">
+                            <div>
+                                <h4 className="text-white font-serif font-bold text-3xl mb-1">10K+</h4>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Verified Profiles</p>
+                            </div>
+                            <div>
+                                <h4 className="text-gold font-serif font-bold text-3xl mb-1">400+</h4>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Successful Weddings</p>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-serif font-bold text-3xl mb-1">2017</h4>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Established Year</p>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Wave divider */}
-                <div className="absolute bottom-0 left-0 right-0">
-                    <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-                        <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" className="fill-white dark:fill-slate-800" />
-                    </svg>
                 </div>
             </section>
 
-            {/* ══════════════════════════════════════════════════
-                SECTION 1.5: SUITABLE MATCHES CAROUSEL
-            ══════════════════════════════════════════════════ */}
-            <SuitableMatchesCarousel onViewMore={() => navigate('/profiles')} />
-
-            {/* ══════════════════════════════════════════════════
-                SECTION 1.7: DOWNLOAD PROFILES PDF
-            ══════════════════════════════════════════════════ */}
-            <DownloadProfilesSection />
-
-            {/* ══════════════════════════════════════════════════
-                SECTION 2: HOW IT WORKS
-            ══════════════════════════════════════════════════ */}
-            <section className="py-24 bg-white dark:bg-slate-800">
+            {/* ── 4-STEP "HOW IT WORKS" ── */}
+            <section className="py-24 bg-white border-b border-[#E8E2D9]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <Section>
-                        <div className="text-center mb-16">
-                            <p className="text-sm font-bold tracking-widest text-slate-500 uppercase mb-3">Simple Process</p>
-                            <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
-                                How <span className="shimmer-text">VidhiLikhit</span> Works
+                        <div className="text-center max-w-3xl mx-auto mb-20">
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#2A2321] font-serif mb-6">
+                                How VidhiLikhit Works
                             </h2>
-                            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                                Simple steps to find your perfect life partner
+                            <p className="text-[#5A524D] text-lg leading-relaxed">
+                                Our platform is designed with a thoughtful understanding of traditional Indian matchmaking, streamlined into four easy, safe, and transparent steps.
                             </p>
                         </div>
                     </Section>
 
-                    <div className="grid md:grid-cols-3 gap-8 relative">
-                        {/* Connector line */}
-                        <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-rose-200 via-orange-300 to-rose-200 z-0" />
+                    {/* Timeline grid - Non-minimal */}
+                    <div className="grid md:grid-cols-4 gap-8 relative max-w-6xl mx-auto">
+                        <div className="hidden md:block absolute top-12 left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-[#E8E2D9] to-transparent z-0"></div>
 
                         {[
                             {
-                                step: '01',
-                                Icon: FileDown,
-                                title: 'Download PDF',
-                                desc: 'Get instant access to detailed PDF profiles of potential matches',
-                                color: 'from-rose-500 to-pink-500',
-                                bg: 'bg-rose-50 dark:bg-rose-900/20',
+                                no: "01",
+                                title: "Create Your Profile",
+                                desc: "Easily register on VidhiLikhit to access our huge, private database of Brides and Grooms.",
+                                icon: Edit3
                             },
                             {
-                                step: '02',
-                                Icon: List,
-                                title: 'Browse & Shortlist',
-                                desc: 'Review profiles and create your personalized shortlist of interests',
-                                color: 'from-orange-500 to-amber-500',
-                                bg: 'bg-orange-50 dark:bg-orange-900/20',
+                                no: "02",
+                                title: "Set Partner Preference",
+                                desc: "Define your Partner Preferences regarding age, height, education, and community specifics.",
+                                icon: Search
                             },
                             {
-                                step: '03',
-                                Icon: PhoneCall,
-                                title: 'Contact Us',
-                                desc: 'Reach out to your matches and start meaningful conversations',
-                                color: 'from-pink-500 to-rose-500',
-                                bg: 'bg-pink-50 dark:bg-pink-900/20',
+                                no: "03",
+                                title: "Receive Matching Profile",
+                                desc: "Receive matching profiles tailored to your exact requirements daily via our system.",
+                                icon: Activity
                             },
-                        ].map((item, i) => (
-                            <Section key={i}>
-                                <div className={`relative z-10 card-hover rounded-2xl p-8 text-center ${item.bg} border border-white dark:border-slate-700 shadow-lg`}>
-                                    <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg`}>
-                                        <item.Icon className="w-8 h-8 text-white" />
+                            {
+                                no: "04",
+                                title: "Send/Receive Interest",
+                                desc: "Express interest to suitable profiles securely and initiate communication seamlessly.",
+                                icon: Heart
+                            }
+                        ].map((step, idx) => (
+                            <Section key={idx} className={`delay-${idx * 100}`}>
+                                <div className="relative z-10 bg-white border border-[#E8E2D9] rounded-xl p-8 hover-premium-shadow text-center min-h-full">
+                                    <div className="w-20 h-20 mx-auto bg-[#FAF8F5] border-2 border-crimson rounded-full flex justify-center items-center mb-6 shadow-sm relative">
+                                        <step.icon className="w-8 h-8 text-crimson" />
+                                        <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-saffron text-white text-xs font-bold flex items-center justify-center border-2 border-white shadow-sm">
+                                            {step.no}
+                                        </div>
                                     </div>
-                                    <div className="text-4xl font-black text-slate-200 dark:text-slate-700 mb-3 select-none">{item.step}</div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{item.title}</h3>
-                                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{item.desc}</p>
+                                    <h3 className="font-bold text-[#2A2321] text-lg mb-4 font-serif">{step.title}</h3>
+                                    <p className="text-sm text-[#5A524D] leading-relaxed">{step.desc}</p>
                                 </div>
                             </Section>
                         ))}
@@ -966,283 +512,173 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* ══════════════════════════════════════════════════
-                SECTION 3: WHY CHOOSE US
-            ══════════════════════════════════════════════════ */}
-            <section className="py-24 bg-gradient-to-br from-rose-50 via-orange-50 to-pink-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-rose-200/20 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-200/20 rounded-full blur-3xl" />
+            {/* ── WHY CHOOSE US (Rich Content Grid) ── */}
+            <section className="py-24 bg-[#FAF8F5] border-b border-[#E8E2D9] relative overflow-hidden">
+                {/* Decorative side mandala portions to break minimalism */}
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-mandala-pattern opacity-10 pointer-events-none rounded-bl-full border-b border-l border-crimson/10" />
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-mandala-pattern opacity-10 pointer-events-none rounded-tr-full border-t border-r border-crimson/10" />
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <Section>
-                        <div className="text-center mb-16">
-                            <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase
-                                            bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 mb-4">
-                                Wedding Website
-                            </span>
-                            <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
-                                Why <span className="shimmer-text">Choose Us</span>
-                            </h2>
-                            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                                Most Trusted and premium Matrimony Service in Karnataka
+                        <div className="text-center mb-16 max-w-4xl mx-auto">
+                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-crimson mb-2 block">Premium Matrimony Service</span>
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#2A2321] font-serif mb-6">Why Choose Us</h2>
+                            <p className="text-lg text-[#5A524D] leading-relaxed font-medium">
+                                We are intensely focused on building families. As the most trusted and premium matrimony service based in Karnataka, we prioritize authenticity, privacy, and community values above all else.
                             </p>
                         </div>
                     </Section>
 
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {[
-                            {
-                                Icon: CheckCircle,
-                                title: 'Genuine Profiles',
-                                desc: 'Contact genuine profiles with 100% verified mobile numbers',
-                                color: 'text-rose-600',
-                                iconBg: 'bg-rose-100 dark:bg-rose-900/40',
-                            },
-                            {
-                                Icon: Shield,
-                                title: 'Most Trusted',
-                                desc: 'The most trusted wedding matrimony brand in the region',
-                                color: 'text-orange-600',
-                                iconBg: 'bg-orange-100 dark:bg-orange-900/40',
-                            },
-                            {
-                                Icon: Award,
-                                title: '400+ Weddings',
-                                desc: 'Hundreds of people have found their life partner through us',
-                                color: 'text-pink-600',
-                                iconBg: 'bg-pink-100 dark:bg-pink-900/40',
-                            },
-                        ].map((f, i) => (
-                            <Section key={i}>
-                                <div className="card-hover bg-white dark:bg-slate-800 rounded-2xl p-8 text-center shadow-lg border border-white dark:border-slate-700">
-                                    <div className={`w-20 h-20 mx-auto mb-6 rounded-full ${f.iconBg} flex items-center justify-center`}>
-                                        <f.Icon className={`w-10 h-10 ${f.color}`} />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{f.title}</h3>
-                                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{f.desc}</p>
-                                </div>
-                            </Section>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ══════════════════════════════════════════════════
-                SECTION 4: STATS BANNER
-            ══════════════════════════════════════════════════ */}
-            <section className="py-16 bg-gradient-to-r from-rose-600 via-pink-600 to-orange-500">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
-                        {[
-                            { val: 400, suffix: '+', label: 'Successful Weddings' },
-                            { val: 10000, suffix: '+', label: 'Active Profiles' },
-                            { val: 2, suffix: '', label: 'Communities Served' },
-                            { val: 7, suffix: '+', label: 'Years of Trust' },
-                        ].map((s, i) => (
-                            <Section key={i}>
-                                <div className="text-4xl sm:text-5xl font-black mb-1">
-                                    <Counter target={s.val} suffix={s.suffix} />
-                                </div>
-                                <div className="text-rose-100 text-sm font-medium">{s.label}</div>
-                            </Section>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ══════════════════════════════════════════════════
-                SECTION 5: WELCOME / ABOUT
-            ══════════════════════════════════════════════════ */}
-            <section className="py-24 bg-white dark:bg-slate-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
-
-                        {/* Left: Visual */}
+                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                         <Section>
-                            <div className="relative">
-                                <div className="rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-rose-100 to-orange-100 dark:from-rose-900/30 dark:to-orange-900/30 aspect-square flex items-center justify-center">
-                                    <div className="text-center p-12 space-y-6">
-                                        <div className="text-9xl">👫</div>
-                                        <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
-                                            Welcome to VidhiLikhit Matrimony
-                                        </div>
-                                        <p className="text-slate-500 dark:text-slate-400 text-base leading-relaxed">
-                                            Founded 12th January 2017 · Kalaburagi, Karnataka
-                                        </p>
-                                    </div>
-                                </div>
-                                {/* Decorative accent */}
-                                <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 opacity-20 rotate-12" />
-                                <div className="absolute -top-6 -left-6 w-20 h-20 rounded-xl bg-gradient-to-br from-orange-400 to-rose-400 opacity-20 -rotate-12" />
+                            <div className="bg-white p-10 rounded-xl border border-[#E8E2D9] premium-shadow h-full border-t-4 border-t-crimson">
+                                <Fingerprint className="w-12 h-12 text-crimson mb-6" />
+                                <h3 className="text-xl font-bold font-serif text-[#2A2321] mb-4">Genuine profiles</h3>
+                                <p className="text-[#5A524D] leading-relaxed">
+                                    Contact genuine profiles with 100% verified mobile numbers. Every registration is meticulously checked to protect our members from fraudulent intents.
+                                </p>
                             </div>
                         </Section>
 
-                        {/* Right: Text */}
                         <Section>
-                            <div className="space-y-6">
-                                <div>
-                                    <h2 className="text-4xl sm:text-5xl font-extrabold mb-2">
-                                        <span className="shimmer-text">WELCOME TO</span>
-                                    </h2>
-                                    <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-800 dark:text-white">
-                                        VIDHILIKHIT MATRIMONY
-                                    </h2>
-                                </div>
-
-                                <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
-                                    Finding your perfect life partner starts here. At VidhiLikhit Matrimony, we believe
-                                    that every relationship begins with trust and understanding. Our platform helps you
-                                    connect with genuine matches who share your values, dreams, and goals.
+                            <div className="bg-white p-10 rounded-xl border border-[#E8E2D9] premium-shadow h-full border-t-4 border-t-saffron">
+                                <Shield className="w-12 h-12 text-saffron mb-6" />
+                                <h3 className="text-xl font-bold font-serif text-[#2A2321] mb-4">Most trusted brand</h3>
+                                <p className="text-[#5A524D] leading-relaxed">
+                                    Established in 2017, VidhiLikhit has grown to become the most trusted wedding matrimony platform within the Brahmin and Lingayat communities.
                                 </p>
+                            </div>
+                        </Section>
 
-                                <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
-                                    We bring traditional matchmaking into the modern world — secure, personalized, and
-                                    effortless. Originally serving the Brahmin community, we have now expanded to the
-                                    Lingayat community, preserving their unique heritage.
+                        <Section>
+                            <div className="bg-white p-10 rounded-xl border border-[#E8E2D9] premium-shadow h-full border-t-4 border-t-gold">
+                                <Award className="w-12 h-12 text-gold mb-6" />
+                                <h3 className="text-xl font-bold font-serif text-[#2A2321] mb-4">400+ Weddings</h3>
+                                <p className="text-[#5A524D] leading-relaxed">
+                                    Hundreds of people have found their life partner through our dedicated services, turning hope into beautiful, lifelong relationships.
                                 </p>
-
-                                <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
-                                    While our primary focus remains on fresh marriages, we also extend our services to
-                                    divorcees, widows, and widowers, offering a respectful space to rediscover companionship.
-                                </p>
-
-                                {/* Contact bar */}
-                                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                                    <a href="tel:8123656445"
-                                        className="flex items-center gap-3 px-5 py-3 rounded-xl bg-rose-50 dark:bg-rose-900/20
-                                                   border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors group">
-                                        <div className="w-9 h-9 rounded-full bg-rose-500 flex items-center justify-center">
-                                            <Phone className="w-4 h-4 text-white" />
-                                        </div>
-                                        <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-rose-600">8123656445</span>
-                                    </a>
-                                    <a href="mailto:support@vidhilikhit.com"
-                                        className="flex items-center gap-3 px-5 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/20
-                                                   border border-orange-200 dark:border-orange-800 hover:bg-orange-100 transition-colors group">
-                                        <div className="w-9 h-9 rounded-full bg-orange-500 flex items-center justify-center">
-                                            <Mail className="w-4 h-4 text-white" />
-                                        </div>
-                                        <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-orange-600 text-sm">support@vidhilikhit.com</span>
-                                    </a>
-                                </div>
-
-                                <button
-                                    onClick={() => navigate(isAuthenticated ? (hasProfile ? '/profiles' : '/create-profile') : '/register')}
-                                    className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base
-                                               bg-gradient-to-r from-rose-500 to-orange-500 text-white
-                                               hover:from-rose-600 hover:to-orange-600 shadow-lg shadow-rose-200
-                                               transition-all hover:scale-105 active:scale-95"
-                                >
-                                    Begin Your Journey <ChevronRight className="w-5 h-5" />
-                                </button>
                             </div>
                         </Section>
                     </div>
                 </div>
             </section>
 
-            {/* ══════════════════════════════════════════════════
-                SECTION 6: SUCCESS STORIES PLACEHOLDER
-            ══════════════════════════════════════════════════ */}
-            <section className="py-24 bg-gradient-to-b from-rose-50 to-white dark:from-slate-900 dark:to-slate-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* ── SUITABLE MATCHES COMPONENT ── */}
+            <SuitableMatchesGrid onViewMore={() => navigate('/profiles')} />
+
+            {/* ── PDF DOWNLOAD BANNER (Elaborate Design) ── */}
+            <section className="py-24 bg-[#2A2321] text-white overflow-hidden relative border-t-8 border-crimson">
+                {/* Background Texture image */}
+                <div className="absolute inset-0 opacity-20">
+                    <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="Texture" className="w-full h-full object-cover" />
+                </div>
+                <div className="absolute inset-0 bg-[#2A2321]/80 backdrop-blur-sm" />
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
                     <Section>
-                        <div className="text-center mb-16">
-                            <p className="text-sm font-bold tracking-widest text-slate-500 uppercase mb-3">Trusted Brand</p>
-                            <h2 className="text-4xl sm:text-5xl font-extrabold mb-4">
-                                <span className="shimmer-text">Success Stories</span>
+                        <div className="max-w-4xl mx-auto">
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-serif mb-8 text-white">
+                                Download Verified <span className="text-gold">Brahmin & Lingayat</span> Profiles Instantly
                             </h2>
-                            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                                Real couples who found their perfect match on VidhiLikhit Matrimony
+                            <p className="text-lg text-gray-300 leading-relaxed font-medium mb-10 text-left border-l-4 border-crimson pl-6 bg-white/5 p-6 rounded-r-xl">
+                                Looking For The Right Life Partner In Your Own Community? With VidhiLikhit, you can instantly download verified biodata PDFs — complete with personal, educational, and professional details. Shortlist your favorites, and connect directly through us for the next crucial step.
+                            </p>
+
+                            <button
+                                onClick={() => setIsDownloadModalOpen(true)}
+                                className="inline-flex items-center gap-3 px-12 py-5 rounded-md font-bold text-white bg-crimson hover:bg-[#7A0217] transition-colors shadow-2xl text-lg uppercase tracking-wider border border-red-900"
+                            >
+                                <FileDown className="w-6 h-6" /> Access Biodata PDFs
+                            </button>
+                        </div>
+                    </Section>
+                </div>
+            </section>
+
+            <DownloadModal isOpen={isDownloadModalOpen} onClose={() => setIsDownloadModalOpen(false)} />
+
+            {/* ── EXPANDED FOOTER (Original style) ── */}
+            <footer className="bg-[#1A1514] text-[#B0A8A3] py-16">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 border-b border-[#332A28] pb-12 mb-12">
+                        {/* Column 1 */}
+                        <div className="space-y-6">
+                            <img src={LogoImg} alt="VidhiLikhit Footer Logo" className="h-16 w-auto object-contain bg-white/10 p-2 rounded-lg" />
+                            <p className="text-sm leading-relaxed">
+                                Our platform helps you connect with genuine matches who share your values, dreams, and goals. We bring traditional matchmaking into the modern world.
                             </p>
                         </div>
-                    </Section>
 
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[
-                            { emoji: '💑', names: 'Rahul & Priya', community: 'Brahmin', desc: 'Found each other through VidhiLikhit and couldn\'t be happier. The platform made our families feel safe and connected.' },
-                            { emoji: '👰', names: 'Arjun & Kavya', community: 'Lingayat', desc: 'The verification process gave us confidence. Within 3 months we found our perfect match. Eternally grateful!' },
-                            { emoji: '💍', names: 'Suresh & Deepa', community: 'Brahmin', desc: 'Traditional values met modern convenience. VidhiLikhit understood our community\'s needs perfectly.' },
-                        ].map((story, i) => (
-                            <Section key={i}>
-                                <div className="card-hover bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg border border-rose-100 dark:border-slate-700">
-                                    <div className="flex justify-center mb-6">
-                                        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-rose-100 to-orange-100 dark:from-rose-900/30 dark:to-orange-900/30 flex items-center justify-center text-4xl shadow-lg">
-                                            {story.emoji}
-                                        </div>
-                                    </div>
-                                    <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6 italic">
-                                        "{story.desc}"
-                                    </p>
-                                    <div className="border-t border-rose-100 dark:border-slate-700 pt-4">
-                                        <h3 className="font-bold text-slate-900 dark:text-white">{story.names}</h3>
-                                        <p className="text-xs text-rose-500 font-medium mt-0.5">{story.community} · VidhiLikhit Matrimony</p>
-                                    </div>
-                                </div>
-                            </Section>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ══════════════════════════════════════════════════
-                SECTION 7: JOIN CTA
-            ══════════════════════════════════════════════════ */}
-            <section className="py-24 bg-white dark:bg-slate-800">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <Section>
-                        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-rose-500 via-pink-500 to-orange-500 p-12 text-center shadow-2xl">
-                            {/* Decorative dots */}
-                            <div className="absolute inset-0 opacity-10"
-                                style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-                            <div className="relative z-10 space-y-6">
-                                <div className="text-5xl">💍</div>
-                                <h2 className="text-4xl sm:text-5xl font-extrabold text-white">
-                                    Join VidhiLikhit
-                                </h2>
-                                <p className="text-rose-100 text-lg leading-relaxed max-w-2xl mx-auto">
-                                    Over the years, VidhiLikhit Matrimony has grown from a family initiative into a
-                                    trusted name in matrimonial services — connecting hearts, building families, and
-                                    nurturing lifelong relationships.
-                                </p>
-                                <p className="text-white/80 text-base max-w-xl mx-auto">
-                                    A family-run platform, devoted to the Brahmin and Lingayat communities, and a
-                                    bright ray of hope for every heart seeking a true connection.
-                                </p>
-                                <div className="flex flex-wrap justify-center gap-4 pt-4">
-                                    <button
-                                        onClick={() => navigate(isAuthenticated ? (hasProfile ? '/profiles' : '/create-profile') : '/login')}
-                                        className="px-10 py-4 rounded-xl font-bold text-rose-600 bg-white
-                                                   hover:bg-rose-50 shadow-lg transition-all hover:scale-105 active:scale-95"
-                                    >
-                                        {isAuthenticated ? 'Login' : 'Registration Free'}
-                                    </button>
-                                    {!isAuthenticated && (
-                                        <button
-                                            onClick={() => navigate('/login')}
-                                            className="px-10 py-4 rounded-xl font-bold text-white border-2 border-white/60
-                                                       hover:bg-white/10 transition-all"
-                                        >
-                                            Sign In
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
+                        {/* Column 2: GET IN TOUCH */}
+                        <div>
+                            <h4 className="text-white font-serif font-bold text-lg mb-6 uppercase tracking-wider flex items-center gap-2">
+                                <span className="w-4 h-1 bg-crimson inline-block"></span> Get In Touch
+                            </h4>
+                            <ul className="space-y-4 text-sm font-medium">
+                                <li className="flex gap-3">
+                                    <MapPin className="w-5 h-5 text-crimson flex-shrink-0" />
+                                    <span>NGO'S Colony, Kalaburagi,<br />Karnataka</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <Phone className="w-5 h-5 text-crimson flex-shrink-0" />
+                                    <span>+91 8123656445</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <Mail className="w-5 h-5 text-crimson flex-shrink-0" />
+                                    <span>support@vidhilikhit.com</span>
+                                </li>
+                            </ul>
                         </div>
-                    </Section>
-                </div>
-            </section>
 
-            {/* ══════════════════════════════════════════════════
-                FOOTER STRIP
-            ══════════════════════════════════════════════════ */}
-            <footer className="bg-slate-900 text-slate-400 py-8 text-center text-sm">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="font-bold text-white text-xl shimmer-text mb-2">VidhiLikhit Matrimony</div>
-                    <p>Founded 12th January 2017 · Kalaburagi, Karnataka</p>
-                    <p className="mt-1">© {new Date().getFullYear()} VidhiLikhit Matrimony. All rights reserved.</p>
+                        {/* Column 3: Resources */}
+                        <div>
+                            <h4 className="text-white font-serif font-bold text-lg mb-6 uppercase tracking-wider flex items-center gap-2">
+                                <span className="w-4 h-1 bg-saffron inline-block"></span> Resources
+                            </h4>
+                            <ul className="space-y-3 text-sm">
+                                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+                                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+                                <li><a href="#" className="hover:text-white transition-colors">Submit Feedback</a></li>
+                            </ul>
+                        </div>
+
+                        {/* Column 4: Support */}
+                        <div>
+                            <h4 className="text-white font-serif font-bold text-lg mb-6 uppercase tracking-wider flex items-center gap-2">
+                                <span className="w-4 h-1 bg-gold inline-block"></span> Support
+                            </h4>
+                            <ul className="space-y-3 text-sm">
+                                <li><a href="#" className="hover:text-white transition-colors">Help / FAQs</a></li>
+                                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-between items-center text-xs font-bold tracking-wider uppercase">
+                        <p>© 2026 VidhiLikhit. All rights reserved.</p>
+                        <div className="flex gap-4 mt-4 sm:mt-0">
+                            <span className="text-crimson">Trusted Framework</span>
+                            <span className="text-saffron">Premium Service</span>
+                        </div>
+                    </div>
                 </div>
             </footer>
+
+            {/* ── WHATSAPP FLOATING BUTTON ── */}
+            <a
+                href="https://wa.me/918123656445"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-6 right-6 z-[100] bg-[#25D366] text-white p-4 rounded-full shadow-2xl hover:bg-[#1EBE57] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group"
+                style={{ boxShadow: '0 10px 40px -10px rgba(37, 211, 102, 0.6)' }}
+                title="Chat with Admin on WhatsApp"
+            >
+                <span className="absolute right-full mr-4 bg-white text-[#2A2321] text-sm font-bold px-4 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none border border-[#E8E2D9]">
+                    Chat with Admin
+                </span>
+                <FaWhatsapp className="w-8 h-8" />
+            </a>
         </div>
     );
 };
