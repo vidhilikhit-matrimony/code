@@ -11,7 +11,7 @@ const ProfileManagement = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all'); // all, published, unpublished
+    const [filterStatus, setFilterStatus] = useState('all');
     const [deleteLoading, setDeleteLoading] = useState(null);
     const [editingUnlocks, setEditingUnlocks] = useState(null); // { id: profileId, value: number, subId: subscriptionId }
     const [updateLoading, setUpdateLoading] = useState(false);

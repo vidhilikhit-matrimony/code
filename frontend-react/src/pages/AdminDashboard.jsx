@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Shield, LayoutDashboard, Users, FileText, CreditCard, LogOut } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
+import { Shield, LayoutDashboard, Users, FileText, CreditCard, FileDown } from 'lucide-react';
 import api from '../services/api';
 import AdminStats from '../components/admin/AdminStats';
 import UserManagement from '../components/admin/UserManagement';
 import ProfileManagement from '../components/admin/ProfileManagement';
 import SubscriptionManagement from '../components/admin/SubscriptionManagement'; // Extracted existing logic
 import RefreshPageButton from '../components/common/RefreshPageButton';
+import SubscriptionManagement from '../components/admin/SubscriptionManagement';
+import AdminReports from '../components/admin/AdminReports';
 
 const AdminDashboard = () => {
     const dispatch = useDispatch();
@@ -25,7 +28,8 @@ const AdminDashboard = () => {
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'users', label: 'Users', icon: Users },
         { id: 'profiles', label: 'Profiles', icon: FileText },
-        { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard }
+        { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
+        { id: 'reports', label: 'Reports', icon: FileDown },
     ];
 
     return (
@@ -61,7 +65,9 @@ const AdminDashboard = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${activeTab === tab.id
-                                ? 'bg-primary-500 text-white shadow-md'
+                                ? tab.id === 'reports'
+                                    ? 'bg-indigo-600 text-white shadow-md'
+                                    : 'bg-primary-500 text-white shadow-md'
                                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
                                 }`}
                         >
@@ -77,7 +83,6 @@ const AdminDashboard = () => {
                         <>
                             <AdminStats />
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Quick access to recent items could go here */}
                                 <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
                                     <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Recent Users & Profiles</h3>
                                     <p className="text-slate-500 text-sm">Select the "Users" or "Profiles" tab to view details.</p>
@@ -91,6 +96,8 @@ const AdminDashboard = () => {
                     {activeTab === 'profiles' && <ProfileManagement />}
 
                     {activeTab === 'subscriptions' && <SubscriptionManagement />}
+
+                    {activeTab === 'reports' && <AdminReports />}
                 </div>
             </div>
         </div>
