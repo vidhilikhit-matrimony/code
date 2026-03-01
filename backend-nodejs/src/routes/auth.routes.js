@@ -59,4 +59,11 @@ router.post('/reset-password', authController.resetPassword);
  */
 router.post('/refresh-token', authController.refreshToken);
 
+/**
+ * @route   POST /api/auth/clear-notification
+ * @desc    Clear pending notification for the authenticated user
+ * @access  Private
+ */
+router.post('/clear-notification', authenticate, authController.clearNotification);
+
 module.exports = router;

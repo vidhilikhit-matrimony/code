@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { getCurrentUser } from '../services/authService';
+import { toast } from 'sonner';
+import { getCurrentUser, clearNotification } from '../services/authService';
 import { updateUser } from '../redux/slices/authSlice';
 
 // Pages
@@ -12,6 +13,7 @@ import ForgotPassword from '../pages/ForgotPassword';
 import Profiles from '../pages/Profiles';
 import ProfileDetail from '../pages/ProfileDetail';
 import CreateProfile from '../pages/CreateProfile';
+import UnlockedProfiles from '../pages/UnlockedProfiles';
 import Payment from '../pages/Payment';
 import AdminDashboard from '../pages/AdminDashboard';
 import NotFound from '../pages/NotFound';
@@ -63,7 +65,31 @@ const AppRouter = () => {
         try {
           const response = await getCurrentUser();
           if (response?.success && response?.data?.user) {
-            dispatch(updateUser(response.data.user));
+            const user = response.data.user;
+            dispatch(updateUser(user));
+
+            // Check for persistent pending notifications
+            if (user.pendingNotification) {
+              toast.success(user.pendingNotification, {
+                duration: 30000,
+                id: 'admin-approval-toast', // prevent duplicates
+                className: '!bg-gradient-to-r !from-emerald-500 !to-teal-600 !text-white !border-emerald-400 !shadow-2xl',
+                style: {
+                  background: 'linear-gradient(to right, #10b981, #0d9488)',
+                  color: 'white',
+                  border: '1px solid #34d399',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  padding: '16px'
+                }
+              });
+              // Clear it from the server so we don't show it again
+              try {
+                await clearNotification();
+              } catch (err) {
+                console.error("Failed to clear notification on backend", err);
+              }
+            }
           }
         } catch (error) {
           console.error("Failed to sync latest user data:", error);
@@ -142,6 +168,15 @@ const AppRouter = () => {
           element={
             <ProtectedRoute>
               <CreateProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/unlocked-profiles"
+          element={
+            <ProtectedRoute>
+              <UnlockedProfiles />
             </ProtectedRoute>
           }
         />

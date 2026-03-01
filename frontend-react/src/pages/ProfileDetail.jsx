@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { logout, updateUser } from '../redux/slices/authSlice';
 import { getProfileById, unlockProfile, deleteProfile } from '../services/profileService';
-import RefreshPageButton from '../components/common/RefreshPageButton';
+
 
 // ─── Detail Row Component ───────────────────────────────────────
 const DetailRow = ({ icon: Icon, label, value, iconColor = 'text-primary-500', className = '' }) => {
@@ -201,6 +201,9 @@ const ProfileDetail = () => {
         ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
         : null;
 
+    const genderCode = profile.profileCode?.[3]?.toLowerCase();
+    const genderDisplay = genderCode === 'm' ? 'Male' : genderCode === 'f' ? 'Female' : null;
+
     const isOwner = user && profile.userId === user.id;
 
     return (
@@ -238,13 +241,24 @@ const ProfileDetail = () => {
                             </button>
                         )}
 
-                        {/* Unlocks Remaining */}
+                        {/* Unlocks Remaining or Renew Button */}
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Remaining</span>
-                            <div className="flex items-center gap-1.5 text-sm font-medium text-slate-900 dark:text-slate-100">
-                                <Shield className="w-3.5 h-3.5 text-primary-500" />
-                                <span><span className="font-bold text-primary-600 dark:text-primary-400">{user?.remainingViews || 0}</span> Unlocks</span>
-                            </div>
+                            {user?.remainingViews > 0 ? (
+                                <>
+                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Remaining</span>
+                                    <div className="flex items-center gap-1.5 text-sm font-medium text-slate-900 dark:text-slate-100">
+                                        <Shield className="w-3.5 h-3.5 text-primary-500" />
+                                        <span><span className="font-bold text-primary-600 dark:text-primary-400">{user.remainingViews}</span> Unlocks</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => navigate('/payment')}
+                                    className="px-4 py-1.5 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white rounded-md text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                                >
+                                    {user?.subscriptionStatus === 'active' && user?.remainingViews === 0 ? 'Renew Subscription' : 'Buy Subscription'}
+                                </button>
+                            )}
                         </div>
 
                         <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1"></div>
@@ -367,10 +381,10 @@ const ProfileDetail = () => {
                                         {profile.maritalStatus}
                                     </div>
                                 )}
-                                {profile.currentLocation && profile.currentLocation !== 'N/A' && (
+                                {profile.workingPlace && profile.workingPlace !== 'N/A' && (
                                     <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
                                         <MapPin className="w-4 h-4 text-blue-500" />
-                                        {profile.currentLocation}
+                                        {profile.workingPlace}
                                     </div>
                                 )}
                             </div>
@@ -463,23 +477,7 @@ const ProfileDetail = () => {
                             </div>
                         )}
 
-                        {/* Partner Expectations (highlighted on the left for visibility) */}
-                        {profile.expectations && (
-                            <div className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-slate-800 dark:to-slate-800/80 rounded-2xl shadow-sm border border-primary-200/50 dark:border-slate-700 p-6 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <Heart className="w-24 h-24 text-primary-600" />
-                                </div>
-                                <div className="relative z-10">
-                                    <h3 className="flex items-center gap-2 text-lg font-bold text-primary-900 dark:text-white mb-4">
-                                        <Heart className="w-5 h-5 text-primary-500" />
-                                        Partner Preferences
-                                    </h3>
-                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                                        {profile.expectations}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
+
 
                         {/* Profile Locked Banner (Sidebar for Desktop) */}
                         {!isUnlocked && (
@@ -509,10 +507,18 @@ const ProfileDetail = () => {
                         {/* Personal & Religious Background */}
                         <Section title="Personal Background" icon={User} iconColor="text-indigo-500">
                             <DetailRow icon={Calendar} label="Date of Birth" value={dobDisplay} iconColor="text-indigo-500" />
-                            <DetailRow icon={Clock} label="Time of Birth" value={profile.timeOfBirth} iconColor="text-indigo-500" />
+                            <DetailRow icon={User} label="Gender" value={genderDisplay} iconColor="text-indigo-500" />
+                            <DetailRow icon={MapPin} label="Place of Birth" value={profile.birthPlace} iconColor="text-indigo-500" />
+
                             <DetailRow icon={Ruler} label="Height" value={profile.height} iconColor="text-indigo-500" />
                             <DetailRow icon={Users} label="Profile For" value={profile.profileFor} iconColor="text-indigo-500" />
-                            <DetailRow icon={Heart} label="Marital Status" value={profile.maritalStatus} iconColor="text-rose-500" className="col-span-1 sm:col-span-2" />
+                            <DetailRow icon={Heart} label="Marital Status" value={profile.maritalStatus} iconColor="text-rose-500" className="capitalize" />
+                            <DetailRow icon={MapPin} label="Current Location" value={profile.currentLocation} iconColor="text-slate-600 dark:text-slate-400" />
+                            <DetailRow icon={MapPin} label="Country" value={profile.country} iconColor="text-slate-600 dark:text-slate-400" />
+                            <DetailRow icon={User} label="Profile Managed By" value={profile.sendersInfo} iconColor="text-slate-600 dark:text-slate-400" />
+                            {profile.expectations && (
+                                <DetailRow icon={FileText} label="Partner Expectations" value={profile.expectations} iconColor="text-indigo-500" className="col-span-1 sm:col-span-2" />
+                            )}
                         </Section>
 
                         <Section title="Community Details" icon={Star} iconColor="text-amber-500">
@@ -522,6 +528,7 @@ const ProfileDetail = () => {
                             <DetailRow icon={Star} label="Rashi" value={profile.rashi} iconColor="text-amber-500" />
                             <DetailRow icon={Star} label="Nakshatra" value={profile.nakshatra} iconColor="text-amber-500" />
                             <DetailRow icon={Star} label="Nadi" value={profile.nadi} iconColor="text-amber-500" />
+                            <DetailRow icon={Clock} label="Time of Birth" value={profile.timeOfBirth} iconColor="text-amber-500" />
                         </Section>
 
                         {/* Education & Career */}
@@ -529,18 +536,20 @@ const ProfileDetail = () => {
                             <DetailRow icon={GraduationCap} label="Highest Education" value={profile.education} iconColor="text-blue-500" />
                             <DetailRow icon={Briefcase} label="Current Occupation" value={profile.occupation} iconColor="text-blue-500" />
                             <DetailRow icon={Briefcase} label="Annual Income" value={profile.annualIncome} iconColor="text-emerald-500" />
-                            <DetailRow icon={MapPin} label="Working Place" value={profile.workingPlace} iconColor="text-blue-500" />
-                            {profile.assets && (
-                                <DetailRow icon={Briefcase} label="Assets / Properties" value={profile.assets} iconColor="text-emerald-500" className="col-span-1 sm:col-span-2" />
-                            )}
+                            <DetailRow icon={MapPin} label="Work Location" value={profile.workingPlace} iconColor="text-blue-500" />
                         </Section>
 
                         {/* Family details - Always show structure */}
                         <Section title="Family Details" icon={Users} iconColor="text-purple-500">
                             <DetailRow icon={User} label="Father's Name" value={profile.fatherName} iconColor="text-purple-500" />
+                            <DetailRow icon={Briefcase} label="Father's Occupation" value={profile.fatherOccupation} iconColor="text-purple-500" />
                             <DetailRow icon={User} label="Mother's Name" value={profile.motherName} iconColor="text-purple-500" />
+                            <DetailRow icon={Briefcase} label="Mother's Occupation" value={profile.motherOccupation} iconColor="text-purple-500" />
                             <DetailRow icon={Users} label="Brothers" value={profile.brother} iconColor="text-purple-500" />
                             <DetailRow icon={Users} label="Sisters" value={profile.sister} iconColor="text-purple-500" />
+                            {profile.assets && (
+                                <DetailRow icon={Briefcase} label="Assets / Properties" value={profile.assets} iconColor="text-purple-500" className="col-span-1 sm:col-span-2" />
+                            )}
                         </Section>
 
                         {/* Contact details */}
@@ -572,8 +581,6 @@ const ProfileDetail = () => {
                                 </div>
                             )}
 
-                            {/* Always visible contact fields */}
-                            <DetailRow icon={User} label="Profile Managed By" value={profile.sendersInfo} iconColor="text-slate-600 dark:text-slate-400" />
                         </Section>
 
                     </div>

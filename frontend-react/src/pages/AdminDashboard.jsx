@@ -9,7 +9,7 @@ import AdminStats from '../components/admin/AdminStats';
 import UserManagement from '../components/admin/UserManagement';
 import ProfileManagement from '../components/admin/ProfileManagement';
 import SubscriptionManagement from '../components/admin/SubscriptionManagement';
-import RefreshPageButton from '../components/common/RefreshPageButton';
+
 import AdminReports from '../components/admin/AdminReports';
 
 const AdminDashboard = () => {
@@ -45,7 +45,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <RefreshPageButton />
+
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-rose-600 dark:hover:text-rose-400 transition-colors shadow-sm font-medium"

@@ -7,12 +7,16 @@ const {
     getMyProfile,
     getAllProfiles,
     getProfileById,
+    getUnlockedProfiles,
     unlockProfile,
     deleteProfile
 } = require('../controllers/profileController');
 
 // GET /api/profiles/me — requires auth (must be before /:id)
 router.get('/me', authenticate, getMyProfile);
+
+// GET /api/profiles/unlocked — requires auth (must be before /:id)
+router.get('/unlocked', authenticate, getUnlockedProfiles);
 
 // GET /api/profiles — public, but optionalAuth so logged-in users exclude their own profile
 router.get('/', optionalAuth, getAllProfiles);

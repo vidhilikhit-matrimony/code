@@ -44,7 +44,8 @@ const enrichUserWithProfile = async (user, profile) => {
         firstName,
         photoUrl,
         remainingViews: subscription ? subscription.remainingViews : 0,
-        subscriptionStatus: subscription ? subscription.status : 'none'
+        subscriptionStatus: subscription ? subscription.status : 'none',
+        pendingNotification: user.pendingNotification
     };
 };
 
@@ -567,6 +568,34 @@ const refreshToken = async (req, res, next) => {
     }
 };
 
+/**
+ * Clear pending notification
+ * POST /api/auth/clear-notification
+ */
+const clearNotification = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        user.pendingNotification = null;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Notification cleared'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     register,
     verifyOTP,
@@ -575,5 +604,6 @@ module.exports = {
     getMe,
     forgotPassword,
     resetPassword,
-    refreshToken
+    refreshToken,
+    clearNotification
 };

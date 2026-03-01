@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
     user: JSON.parse(localStorage.getItem('user')) || null,
     isAuthenticated: !!localStorage.getItem('accessToken'),
+    sessionSeed: parseInt(localStorage.getItem('sessionSeed')) || Math.floor(Math.random() * 1000000),
     isLoading: false,
     error: null
 };
@@ -20,6 +21,11 @@ const authSlice = createSlice({
             state.isAuthenticated = true;
             state.user = action.payload.user;
             state.error = null;
+
+            // Generate new seed on explicit login
+            const newSeed = Math.floor(Math.random() * 1000000);
+            state.sessionSeed = newSeed;
+            localStorage.setItem('sessionSeed', newSeed.toString());
 
             // Save to localStorage
             localStorage.setItem('accessToken', action.payload.accessToken);
@@ -43,6 +49,7 @@ const authSlice = createSlice({
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
+            localStorage.removeItem('sessionSeed');
         },
         updateUser: (state, action) => {
             state.user = { ...state.user, ...action.payload };

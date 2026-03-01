@@ -57,6 +57,13 @@ export const refreshToken = async (refreshToken) => {
 };
 
 /**
+ * Clear pending notification
+ */
+export const clearNotification = async () => {
+    return await api.post('/auth/clear-notification');
+};
+
+/**
  * Logout (client-side only - clear tokens)
  */
 export const logout = () => {

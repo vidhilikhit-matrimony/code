@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import { QrCode, Upload, Check, Loader2, ArrowLeft, Shield, AlertCircle } from 'lucide-react';
 import api from '../services/api';
 import qrCodeImg from '../assets/payment-qr.jpeg';
-import RefreshPageButton from '../components/common/RefreshPageButton';
+
 
 const PLANS = [
     { id: 'basic', name: 'Basic Plan', amount: 1000, views: 30, color: 'bg-blue-500' },
@@ -91,7 +91,7 @@ const Payment = () => {
                         </div>
                     </div>
                     <div>
-                        <RefreshPageButton />
+
                     </div>
                 </div>
 

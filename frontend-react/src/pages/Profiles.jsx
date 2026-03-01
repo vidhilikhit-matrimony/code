@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Search, SlidersHorizontal, X, MapPin, Briefcase, GraduationCap, ChevronLeft, ChevronRight, User, Heart, Loader2, LogOut } from 'lucide-react';
+import { Search, SlidersHorizontal, X, MapPin, Briefcase, GraduationCap, ChevronLeft, ChevronRight, User, Heart, Loader2, LogOut, LockOpen } from 'lucide-react';
 import { getAllProfiles, getMyProfile } from '../services/profileService';
 import { logout } from '../redux/slices/authSlice';
 import { toast } from 'sonner';
-import RefreshPageButton from '../components/common/RefreshPageButton';
+
 
 // ─── Filter Config ─────────────────────────────────────────────
 const FILTER_CONFIG = {
@@ -305,7 +305,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 const Profiles = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const { user } = useSelector((state) => state.auth);
+    const { user, sessionSeed } = useSelector((state) => state.auth);
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
@@ -354,7 +354,8 @@ const Profiles = () => {
             const response = await getAllProfiles({
                 ...filters,
                 page,
-                limit: 12
+                limit: 12,
+                seed: sessionSeed
             });
             if (response.success) {
                 setProfiles(response.data.profiles);
@@ -417,9 +418,6 @@ const Profiles = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <span className="text-sm text-slate-500">
-                            <span className="font-bold text-slate-900 dark:text-white">{total}</span> profiles
-                        </span>
 
                         {/* Mobile filter toggle */}
                         <button
@@ -434,6 +432,16 @@ const Profiles = () => {
                                 </span>
                             )}
                         </button>
+
+                        {user && (
+                            <button
+                                onClick={() => navigate('/unlocked-profiles')}
+                                className="btn btn-outline text-sm hidden sm:flex items-center gap-2"
+                                title="View profiles you have unlocked"
+                            >
+                                <LockOpen className="w-4 h-4" /> Unlocked Profiles
+                            </button>
+                        )}
 
                         <button
                             onClick={() => navigate('/create-profile')}
@@ -457,8 +465,6 @@ const Profiles = () => {
                                 </button>
                             )
                         )}
-
-                        <RefreshPageButton />
 
                         <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2 hidden sm:block"></div>
 

@@ -8,9 +8,22 @@ async function getCroppedFile(imageSrc, pixelCrop, fileName) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    // Limit maximum dimension to 1080px to prevent browser out-of-memory crashes
+    const MAX_DIMENSION = 1080;
 
+    // Calculate scale ratio to fit within max dimension if needed
+    let scale = 1;
+    if (pixelCrop.width > MAX_DIMENSION || pixelCrop.height > MAX_DIMENSION) {
+        scale = Math.min(MAX_DIMENSION / pixelCrop.width, MAX_DIMENSION / pixelCrop.height);
+    }
+
+    const outputWidth = Math.floor(pixelCrop.width * scale);
+    const outputHeight = Math.floor(pixelCrop.height * scale);
+
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+
+    // Draw image scaling it to the output canvas size
     ctx.drawImage(
         image,
         pixelCrop.x,
@@ -19,12 +32,16 @@ async function getCroppedFile(imageSrc, pixelCrop, fileName) {
         pixelCrop.height,
         0,
         0,
-        pixelCrop.width,
-        pixelCrop.height
+        outputWidth,
+        outputHeight
     );
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
+            if (!blob) {
+                reject(new Error('Canvas is empty or failed to generate blob'));
+                return;
+            }
             const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
             resolve({ file: croppedFile, previewUrl: URL.createObjectURL(blob) });
         }, 'image/jpeg', 0.92);
