@@ -60,11 +60,6 @@ const profileSchema = new mongoose.Schema({
         trim: true,
         required: [true, 'Birthplace is required']
     },
-    foodStyle: {
-        type: String,
-        trim: true,
-        required: [true, 'Food style is required']
-    },
     caste: {
         type: String,
         trim: true
@@ -130,7 +125,15 @@ const profileSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    fatherOccupation: {
+        type: String,
+        trim: true
+    },
     motherName: {
+        type: String,
+        trim: true
+    },
+    motherOccupation: {
         type: String,
         trim: true
     },

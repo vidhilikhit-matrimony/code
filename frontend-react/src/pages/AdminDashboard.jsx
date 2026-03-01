@@ -9,7 +9,7 @@ import AdminStats from '../components/admin/AdminStats';
 import UserManagement from '../components/admin/UserManagement';
 import ProfileManagement from '../components/admin/ProfileManagement';
 import SubscriptionManagement from '../components/admin/SubscriptionManagement';
-import RefreshPageButton from '../components/common/RefreshPageButton';
+
 import AdminReports from '../components/admin/AdminReports';
 
 const AdminDashboard = () => {

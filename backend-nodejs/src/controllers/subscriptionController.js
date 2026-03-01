@@ -222,6 +222,13 @@ const verifyPayment = async (req, res, next) => {
                 });
             }
 
+            // --- Send Notification to User ---
+            const user = await User.findById(payment.userId);
+            if (user) {
+                user.pendingNotification = `Admin approved your subscription. You received ${finalViews} profile view counts and can now unlock profiles to get contact details.`;
+                await user.save();
+            }
+
             return res.json({
                 success: true,
                 message: `Payment approved. Added ${finalViews} views.`,

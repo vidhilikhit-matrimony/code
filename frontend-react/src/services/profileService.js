@@ -75,6 +75,13 @@ export const unlockProfile = async (id) => {
 };
 
 /**
+ * Get unlocked profiles
+ */
+export const getUnlockedProfiles = async () => {
+    return await api.get('/profiles/unlocked');
+};
+
+/**
  * Delete profile
  */
 export const deleteProfile = async (id) => {

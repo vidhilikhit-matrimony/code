@@ -18,6 +18,29 @@ const calculateAge = (dob) => {
 };
 
 /**
+ * Seeded Pseudo-Random Number Generator
+ */
+const mulberry32 = (a) => {
+    return function () {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+};
+
+/**
+ * Shuffle array in place using custom random function
+ */
+const shuffleArray = (array, randomFunc) => {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(randomFunc() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+};
+
+/**
  * Generate unique profile code: VL{caste_code}{gender_code}{sequence}
  * Example: VLbm001 (VL + brahmin + male + 001)
  */
@@ -172,6 +195,7 @@ const toLimitedProfile = async (profile) => {
         lastName: profile.lastName,
         dateOfBirth: profile.dateOfBirth,
         age: profile.age,
+        birthPlace: profile.birthPlace,
         height: profile.height,
         caste: profile.caste,
         subCaste: profile.subCaste,
@@ -189,7 +213,9 @@ const toLimitedProfile = async (profile) => {
         country: profile.country,
         maritalStatus: profile.maritalStatus,
         fatherName: profile.fatherName,
+        fatherOccupation: profile.fatherOccupation,
         motherName: profile.motherName,
+        motherOccupation: profile.motherOccupation,
         profileFor: profile.profileFor,
         brother: profile.brother,
         sister: profile.sister,
@@ -227,7 +253,6 @@ const toFullProfile = async (profile) => {
         dateOfBirth: profile.dateOfBirth,
         age: profile.age,
         birthPlace: profile.birthPlace,
-        foodStyle: profile.foodStyle,
         height: profile.height,
         caste: profile.caste,
         subCaste: profile.subCaste,
@@ -245,7 +270,9 @@ const toFullProfile = async (profile) => {
         country: profile.country,
         maritalStatus: profile.maritalStatus,
         fatherName: profile.fatherName,
+        fatherOccupation: profile.fatherOccupation,
         motherName: profile.motherName,
+        motherOccupation: profile.motherOccupation,
         profileFor: profile.profileFor,
         brother: profile.brother,
         sister: profile.sister,
@@ -310,8 +337,7 @@ const createOrUpdateProfile = async (req, res, next) => {
                 lastName: data.lastName,
                 dateOfBirth: new Date(data.dateOfBirth),
                 age,
-                birthPlace: data.birthPlace || profile.birthPlace,
-                foodStyle: data.foodStyle || profile.foodStyle,
+                birthPlace: data.birthPlace !== undefined ? data.birthPlace : profile.birthPlace,
                 height: data.height || profile.height,
                 caste: data.caste || profile.caste,
                 subCaste: data.subCaste || profile.subCaste,
@@ -328,8 +354,10 @@ const createOrUpdateProfile = async (req, res, next) => {
                 workingPlace: data.workingPlace || profile.workingPlace,
                 country: data.country || profile.country,
                 maritalStatus: data.maritalStatus?.toLowerCase() || profile.maritalStatus,
-                fatherName: data.fatherName || profile.fatherName,
-                motherName: data.motherName || profile.motherName,
+                fatherName: data.fatherName !== undefined ? data.fatherName : profile.fatherName,
+                fatherOccupation: data.fatherOccupation !== undefined ? data.fatherOccupation : profile.fatherOccupation,
+                motherName: data.motherName !== undefined ? data.motherName : profile.motherName,
+                motherOccupation: data.motherOccupation !== undefined ? data.motherOccupation : profile.motherOccupation,
                 profileFor: data.profileFor || profile.profileFor,
                 brother: data.brother || profile.brother,
                 sister: data.sister || profile.sister,
@@ -353,7 +381,6 @@ const createOrUpdateProfile = async (req, res, next) => {
                 dateOfBirth: new Date(data.dateOfBirth),
                 age,
                 birthPlace: data.birthPlace,
-                foodStyle: data.foodStyle,
                 height: data.height,
                 caste: data.caste,
                 subCaste: data.subCaste,
@@ -371,7 +398,9 @@ const createOrUpdateProfile = async (req, res, next) => {
                 country: data.country,
                 maritalStatus: data.maritalStatus?.toLowerCase(),
                 fatherName: data.fatherName,
+                fatherOccupation: data.fatherOccupation,
                 motherName: data.motherName,
+                motherOccupation: data.motherOccupation,
                 profileFor: data.profileFor,
                 brother: data.brother,
                 sister: data.sister,
@@ -545,11 +574,37 @@ const getAllProfiles = async (req, res, next) => {
         // Get total count
         const total = await Profile.countDocuments(filter);
 
-        // Get profiles
-        const profiles = await Profile.find(filter)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        let profiles = [];
+
+        if (req.query.seed && req.query.seed !== 'null' && total > 0) {
+            // Seeded random slicing to prevent duplicate profiles during pagination
+            const seed = parseInt(req.query.seed, 10);
+            const allIdsDoc = await Profile.find(filter).select('_id').lean();
+            let allIds = allIdsDoc.map(doc => doc._id);
+
+            // Shuffle IDs consistently using session seed
+            const prng = mulberry32(seed);
+            allIds = shuffleArray(allIds, prng);
+
+            // Paginate the array
+            const pagedIds = allIds.slice(skip, skip + limit);
+
+            // Fetch exact full documents
+            const unsortedProfiles = await Profile.find({ _id: { $in: pagedIds } });
+
+            // Map back to the exact array shuffled order
+            const profilesMap = new Map();
+            for (const p of unsortedProfiles) {
+                profilesMap.set(p._id.toString(), p);
+            }
+            profiles = pagedIds.map(id => profilesMap.get(id.toString())).filter(Boolean);
+        } else {
+            // Fallback chronological sort
+            profiles = await Profile.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit);
+        }
 
         // Unlocked profile IDs — only meaningful for authenticated users
         let unlockedProfileIds = [];
@@ -585,6 +640,44 @@ const getAllProfiles = async (req, res, next) => {
                 totalPages,
                 profiles: profileList
             }
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Get all profiles unlocked by current user
+ * GET /api/profiles/unlocked
+ */
+const getUnlockedProfiles = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+
+        const subscription = await Subscription.findOne({ userId });
+
+        if (!subscription || !subscription.unlockedProfileIds || subscription.unlockedProfileIds.length === 0) {
+            return res.json({
+                success: true,
+                data: []
+            });
+        }
+
+        const profiles = await Profile.find({
+            _id: { $in: subscription.unlockedProfileIds },
+            isDeleted: false
+        }).sort({ createdAt: -1 });
+
+        const profileList = await Promise.all(profiles.map(async (profile) => {
+            const fullProfile = await toFullProfile(profile);
+            fullProfile.isUnlocked = true;
+            return fullProfile;
+        }));
+
+        res.json({
+            success: true,
+            data: profileList
         });
 
     } catch (error) {
@@ -807,6 +900,7 @@ module.exports = {
     createOrUpdateProfile,
     getMyProfile,
     getAllProfiles,
+    getUnlockedProfiles,
     getProfileById,
     unlockProfile,
     deleteProfile
