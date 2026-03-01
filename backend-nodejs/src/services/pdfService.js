@@ -8,6 +8,19 @@ const { format } = require('date-fns');
  */
 const generateProfileHtml = (profile) => {
     const formatDate = (date) => date ? format(new Date(date), 'dd/MM/yyyy') : 'N/A';
+    const formatTime12Hour = (timeStr) => {
+        if (!timeStr) return 'N/A';
+        const parts = timeStr.split(':');
+        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            let hours = parseInt(parts[0], 10);
+            let minutes = parts[1];
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            const paddedHours = hours.toString().padStart(2, '0');
+            return `${paddedHours}:${minutes} ${ampm}`;
+        }
+        return timeStr;
+    };
 
     // Prioritize Base64 image, fallback to URL, then placeholder
     const photoSrc = profile.photoBase64 || profile.photoUrl || 'https://via.placeholder.com/150?text=No+Photo';
@@ -114,7 +127,7 @@ const generateProfileHtml = (profile) => {
                 <div class="section-title">Personal Information</div>
                 <div class="grid">
                     <div class="row"><span class="label">Date of Birth:</span><span class="value">${formatDate(profile.dateOfBirth)}</span></div>
-                    <div class="row"><span class="label">Time of Birth:</span><span class="value">${profile.timeOfBirth || 'N/A'}</span></div>
+                    <div class="row"><span class="label">Time of Birth:</span><span class="value">${formatTime12Hour(profile.timeOfBirth)}</span></div>
                     <div class="row"><span class="label">Profile For:</span><span class="value">${profile.profileFor || 'N/A'}</span></div>
                     <div class="row"><span class="label">Diet:</span><span class="value">${profile.diet || 'N/A'}</span></div>
                     <div class="row"><span class="label">Working Place:</span><span class="value">${profile.workingPlace || 'N/A'}</span></div>
@@ -234,31 +247,46 @@ const generateProfilePdf = async (profile) => {
  */
 const generatePublicProfilesHtml = (profiles, community, gender) => {
     const formatDate = (date) => date ? format(new Date(date), 'dd/MM/yyyy') : 'N/A';
+    const formatTime12Hour = (timeStr) => {
+        if (!timeStr) return 'N/A';
+        const parts = timeStr.split(':');
+        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            let hours = parseInt(parts[0], 10);
+            let minutes = parts[1];
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            const paddedHours = hours.toString().padStart(2, '0');
+            return `${paddedHours}:${minutes} ${ampm}`;
+        }
+        return timeStr;
+    };
 
     const filterLabel = [
         community ? community.charAt(0).toUpperCase() + community.slice(1) : 'All',
         gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : 'All'
     ].join(' · ');
 
-    const profileCards = profiles.map((p, index) => `
-        <div class="profile-card">
-            <div class="card-header">
-                <div class="card-index">#${index + 1}</div>
-                <div class="card-code">${p.profileCode || 'N/A'}</div>
-                <div class="card-name">${p.firstName || ''} ${p.lastName || ''}</div>
-            </div>
-            <div class="card-grid">
-                <div class="card-row"><span class="clabel">Age / Height</span><span class="cval">${p.age ? p.age + ' yrs' : 'N/A'} / ${p.height || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Caste / Sub Caste</span><span class="cval">${p.caste || 'N/A'} / ${p.subCaste || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Marital Status</span><span class="cval" style="text-transform:capitalize">${p.maritalStatus || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Education</span><span class="cval">${p.education || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Occupation</span><span class="cval">${p.occupation || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Location</span><span class="cval">${p.currentLocation || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Gotra / Rashi</span><span class="cval">${p.gotra || 'N/A'} / ${p.rashi || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Father / Mother</span><span class="cval">${p.fatherName || 'N/A'} / ${p.motherName || 'N/A'}</span></div>
-            </div>
-        </div>
-    `).join('');
+    const tableRows = profiles.map((p, index) => {
+        const agHeight = `${p.age ? p.age + ' yrs' : 'N/A'}\n${p.height || 'N/A'}`;
+        const dobTime = `${formatDate(p.dateOfBirth)}\n${formatTime12Hour(p.timeOfBirth)}\n${agHeight}`;
+
+        const astro = `Gotra: ${p.gotra || 'N/A'}\nRashi: ${p.rashi || 'N/A'}\nNakshatra: ${p.nakshatra || 'N/A'}\nNadi: ${p.nadi || 'N/A'}`;
+
+        const prof = `${p.education || 'N/A'}\n${p.occupation || 'N/A'}\n${p.annualIncome || 'N/A'}`;
+
+        const loc = `Current: ${p.currentLocation || 'N/A'}\nJob: ${p.workingPlace || 'N/A'}`;
+
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${p.firstName || ''}</strong></td>
+                <td style="white-space: pre-line;">${dobTime}</td>
+                <td style="white-space: pre-line;">${astro}</td>
+                <td style="white-space: pre-line;">${prof}</td>
+                <td style="white-space: pre-line;">${loc}</td>
+            </tr>
+        `;
+    }).join('');
 
     return `
     <!DOCTYPE html>
@@ -267,24 +295,22 @@ const generatePublicProfilesHtml = (profiles, community, gender) => {
         <meta charset="UTF-8">
         <title>VidhiLikhit Matrimony - ${filterLabel} Profiles</title>
         <style>
-            @page { margin: 20px; size: A4; }
+            @page { margin: 20px; size: A4 landscape; }
             body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.4; margin: 0; padding: 20px; font-size: 11px; }
             .doc-header { text-align: center; border-bottom: 3px solid #e65100; padding-bottom: 12px; margin-bottom: 20px; }
             .doc-header h1 { color: #e65100; margin: 0 0 4px; font-size: 24px; letter-spacing: 1px; }
             .doc-header .sub { color: #666; font-size: 12px; }
-            .doc-header .filter-badge { display: inline-block; margin-top: 6px; background: #fff3e0; color: #e65100; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: bold; border: 1px solid #ffcc80; }
+            .filter-badge { display: inline-block; margin-top: 6px; background: #fff3e0; color: #e65100; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: bold; border: 1px solid #ffcc80; }
             .owner-contact { margin-top: 8px; font-size: 11px; color: #444; }
             .owner-contact .sep { margin: 0 8px; color: #ccc; }
             .total-count { text-align: right; color: #888; font-size: 10px; margin-bottom: 10px; }
-            .profile-card { border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 14px; overflow: hidden; page-break-inside: avoid; }
-            .card-header { background: linear-gradient(90deg, #e65100 0%, #ff8f00 100%); color: white; padding: 8px 14px; display: flex; align-items: center; gap: 12px; }
-            .card-index { background: rgba(255,255,255,0.25); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; flex-shrink: 0; }
-            .card-code { font-size: 11px; opacity: 0.9; font-weight: bold; }
-            .card-name { font-size: 14px; font-weight: bold; flex: 1; }
-            .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-            .card-row { display: flex; flex-direction: column; padding: 5px 12px; border-bottom: 1px solid #f5f5f5; border-right: 1px solid #f5f5f5; }
-            .clabel { font-size: 9px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-            .cval { font-size: 11px; color: #222; font-weight: 500; margin-top: 1px; }
+            
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            th { background: #e65100; color: white; padding: 8px; text-align: left; font-size: 11px; border: 1px solid #ddd; }
+            td { padding: 8px; border: 1px solid #ddd; font-size: 11px; vertical-align: top; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            
             .doc-footer { text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; font-size: 8px; color: #aaa; }
             .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg); font-size: 80px; color: rgba(230,81,0,0.05); white-space: nowrap; z-index: -10; font-weight: bold; pointer-events: none; }
         </style>
@@ -304,7 +330,23 @@ const generatePublicProfilesHtml = (profiles, community, gender) => {
             <div class="filter-badge">${filterLabel} • ${profiles.length} Profile${profiles.length !== 1 ? 's' : ''}</div>
         </div>
         <div class="total-count">Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Total: ${profiles.length} profile(s)</div>
-        ${profileCards}
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">Sr.</th>
+                    <th style="width: 15%;">First Name</th>
+                    <th style="width: 20%;">DOB, Time, Age & Height</th>
+                    <th style="width: 20%;">Gotra, Rashi, Nakshatra, Nadi</th>
+                    <th style="width: 20%;">Edu, Occ & Income</th>
+                    <th style="width: 20%;">Location (Current & Job)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+
         <div class="doc-footer">VidhiLikhit Matrimony — For queries call 8123656445 or email support@vidhilikhit.com</div>
     </body>
     </html>
@@ -341,6 +383,7 @@ const generatePublicProfilesPdf = async (profiles, community, gender) => {
 
         const pdfBuffer = await page.pdf({
             format: 'A4',
+            landscape: true,
             printBackground: true,
             margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' }
         });
@@ -365,34 +408,49 @@ const generatePublicProfilesPdf = async (profiles, community, gender) => {
  * Includes phone number and address (sensitive — admin only)
  */
 const generateAdminProfilesHtml = (profiles, community, gender) => {
+    const formatDate = (date) => date ? format(new Date(date), 'dd/MM/yyyy') : 'N/A';
+    const formatTime12Hour = (timeStr) => {
+        if (!timeStr) return 'N/A';
+        const parts = timeStr.split(':');
+        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            let hours = parseInt(parts[0], 10);
+            let minutes = parts[1];
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            const paddedHours = hours.toString().padStart(2, '0');
+            return `${paddedHours}:${minutes} ${ampm}`;
+        }
+        return timeStr;
+    };
+
     const communityLabel = community && community !== 'all'
         ? community.charAt(0).toUpperCase() + community.slice(1) : 'All';
     const genderLabel = gender && gender !== 'all'
         ? gender.charAt(0).toUpperCase() + gender.slice(1) : 'All';
     const filterLabel = `${communityLabel} · ${genderLabel}`;
 
-    const profileCards = profiles.map((p, index) => `
-        <div class="profile-card">
-            <div class="card-header">
-                <div class="card-index">#${index + 1}</div>
-                <div class="card-code">${p.profileCode || 'N/A'}</div>
-                <div class="card-name">${p.firstName || ''} ${p.lastName || ''}</div>
-                <div class="admin-badge">ADMIN</div>
-            </div>
-            <div class="card-grid">
-                <div class="card-row"><span class="clabel">Age / Height</span><span class="cval">${p.age ? p.age + ' yrs' : 'N/A'} / ${p.height || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Caste / Sub Caste</span><span class="cval">${p.caste || 'N/A'} / ${p.subCaste || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Marital Status</span><span class="cval" style="text-transform:capitalize">${p.maritalStatus || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Education</span><span class="cval">${p.education || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Occupation</span><span class="cval">${p.occupation || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Location</span><span class="cval">${p.currentLocation || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Gotra / Rashi</span><span class="cval">${p.gotra || 'N/A'} / ${p.rashi || 'N/A'}</span></div>
-                <div class="card-row"><span class="clabel">Father / Mother</span><span class="cval">${p.fatherName || 'N/A'} / ${p.motherName || 'N/A'}</span></div>
-                <div class="card-row contact-row"><span class="clabel">📞 Phone Number</span><span class="cval contact-val">${p.contactNumber || 'N/A'}</span></div>
-                <div class="card-row contact-row"><span class="clabel">🏠 Postal Address</span><span class="cval contact-val">${p.postalAddress || 'N/A'}</span></div>
-            </div>
-        </div>
-    `).join('');
+    const tableRows = profiles.map((p, index) => {
+        const agHeight = `${p.age ? p.age + ' yrs' : 'N/A'}\n${p.height || 'N/A'}`;
+        const dobTime = `${formatDate(p.dateOfBirth)}\n${formatTime12Hour(p.timeOfBirth)}\n${agHeight}`;
+
+        const astro = `Gotra: ${p.gotra || 'N/A'}\nRashi: ${p.rashi || 'N/A'}\nNakshatra: ${p.nakshatra || 'N/A'}\nNadi: ${p.nadi || 'N/A'}`;
+
+        const prof = `${p.education || 'N/A'}\n${p.occupation || 'N/A'}\n${p.annualIncome || 'N/A'}`;
+
+        const loc = `Current: ${p.currentLocation || 'N/A'}\nJob: ${p.workingPlace || 'N/A'}`;
+
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${p.firstName || ''}</strong></td>
+                <td style="white-space: pre-line;">${dobTime}</td>
+                <td style="white-space: pre-line;">${astro}</td>
+                <td style="white-space: pre-line;">${prof}</td>
+                <td style="white-space: pre-line;">${loc}</td>
+                <td><strong>${p.contactNumber || 'N/A'}</strong></td>
+            </tr>
+        `;
+    }).join('');
 
     return `
     <!DOCTYPE html>
@@ -401,28 +459,23 @@ const generateAdminProfilesHtml = (profiles, community, gender) => {
         <meta charset="UTF-8">
         <title>VidhiLikhit Admin — ${filterLabel} Profiles</title>
         <style>
-            @page { margin: 20px; size: A4; }
+            @page { margin: 20px; size: A4 landscape; }
             body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.4; margin: 0; padding: 20px; font-size: 11px; }
             .doc-header { text-align: center; border-bottom: 3px solid #1a237e; padding-bottom: 12px; margin-bottom: 20px; }
             .doc-header h1 { color: #1a237e; margin: 0 0 4px; font-size: 24px; letter-spacing: 1px; }
             .doc-header .sub { color: #666; font-size: 12px; }
-            .doc-header .admin-badge-header { display: inline-block; margin-top: 6px; background: #e3f2fd; color: #1a237e; padding: 3px 14px; border-radius: 999px; font-size: 11px; font-weight: bold; border: 1px solid #90caf9; margin-right: 8px; }
-            .doc-header .filter-badge { display: inline-block; margin-top: 6px; background: #fff3e0; color: #e65100; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: bold; border: 1px solid #ffcc80; }
+            .admin-badge-header { display: inline-block; margin-top: 6px; background: #e3f2fd; color: #1a237e; padding: 3px 14px; border-radius: 999px; font-size: 11px; font-weight: bold; border: 1px solid #90caf9; margin-right: 8px; }
+            .filter-badge { display: inline-block; margin-top: 6px; background: #fff3e0; color: #e65100; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: bold; border: 1px solid #ffcc80; }
             .owner-contact { margin-top: 8px; font-size: 11px; color: #5c6bc0; }
             .owner-contact .sep { margin: 0 8px; color: #9fa8da; }
             .total-count { text-align: right; color: #888; font-size: 10px; margin-bottom: 10px; }
-            .profile-card { border: 1px solid #c5cae9; border-radius: 6px; margin-bottom: 14px; overflow: hidden; page-break-inside: avoid; }
-            .card-header { background: linear-gradient(90deg, #1a237e 0%, #283593 100%); color: white; padding: 8px 14px; display: flex; align-items: center; gap: 12px; }
-            .card-index { background: rgba(255,255,255,0.2); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; flex-shrink: 0; }
-            .card-code { font-size: 11px; opacity: 0.85; font-weight: bold; }
-            .card-name { font-size: 14px; font-weight: bold; flex: 1; }
-            .admin-badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 1px 8px; font-size: 9px; font-weight: bold; letter-spacing: 1px; }
-            .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-            .card-row { display: flex; flex-direction: column; padding: 5px 12px; border-bottom: 1px solid #f5f5f5; border-right: 1px solid #f5f5f5; }
-            .contact-row { background: #e8eaf6; }
-            .clabel { font-size: 9px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-            .cval { font-size: 11px; color: #222; font-weight: 500; margin-top: 1px; }
-            .contact-val { color: #1a237e; font-weight: 700; }
+            
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            th { background: #1a237e; color: white; padding: 8px; text-align: left; font-size: 11px; border: 1px solid #ddd; }
+            td { padding: 8px; border: 1px solid #ddd; font-size: 11px; vertical-align: top; }
+            tr:nth-child(even) { background-color: #f5f5f5; }
+            
             .doc-footer { text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; font-size: 8px; color: #aaa; }
             .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg); font-size: 80px; color: rgba(26,35,126,0.04); white-space: nowrap; z-index: -10; font-weight: bold; pointer-events: none; }
             .confidential { position: fixed; bottom: 30px; right: 30px; font-size: 10px; color: rgba(26,35,126,0.2); font-weight: bold; letter-spacing: 2px; transform: rotate(-10deg); }
@@ -447,7 +500,24 @@ const generateAdminProfilesHtml = (profiles, community, gender) => {
             </div>
         </div>
         <div class="total-count">Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Total: ${profiles.length} profile(s)</div>
-        ${profileCards}
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">Sr.</th>
+                    <th style="width: 15%;">First Name</th>
+                    <th style="width: 16%;">DOB, Time, Age & Height</th>
+                    <th style="width: 16%;">Gotra, Rashi, Nakshatra, Nadi</th>
+                    <th style="width: 16%;">Edu, Occ & Income</th>
+                    <th style="width: 16%;">Location (Current & Job)</th>
+                    <th style="width: 16%;">Phone Number</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+
         <div class="doc-footer">VidhiLikhit Admin Report — CONFIDENTIAL — For internal use only</div>
     </body>
     </html>
@@ -477,6 +547,7 @@ const generateAdminProfilesPdf = async (profiles, community, gender) => {
 
         const pdfBuffer = await page.pdf({
             format: 'A4',
+            landscape: true,
             printBackground: true,
             margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' }
         });

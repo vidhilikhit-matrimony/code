@@ -21,9 +21,11 @@ const ProfileManagement = () => {
     const [eligibleUsers, setEligibleUsers] = useState([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
 
+    const [viewMode, setViewMode] = useState('active'); // 'active' or 'inactive'
+
     useEffect(() => {
         fetchProfiles();
-    }, [page, search, filterStatus]);
+    }, [page, search, filterStatus, viewMode]);
 
     const fetchProfiles = async () => {
         setLoading(true);
@@ -32,7 +34,8 @@ const ProfileManagement = () => {
                 page,
                 limit: 10,
                 ...(search && { search }),
-                ...(filterStatus !== 'all' && { status: filterStatus })
+                ...(filterStatus !== 'all' && { status: filterStatus }),
+                isActive: viewMode === 'active'
             });
 
             const response = await api.get(`/admin/profiles?${queryParams}`);
@@ -106,6 +109,11 @@ const ProfileManagement = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
+    // Reset pagination when view mode changes
+    useEffect(() => {
+        setPage(1);
+    }, [viewMode]);
+
     const handleOpenCreateModal = async () => {
         setShowCreateModal(true);
         setLoadingUsers(true);
@@ -141,6 +149,29 @@ const ProfileManagement = () => {
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center justify-between w-full md:w-auto gap-4">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">Profile Management</h2>
+                    <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
+                        <button
+                            onClick={() => setViewMode('active')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'active'
+                                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                        >
+                            Active Profiles
+                        </button>
+                        <button
+                            onClick={() => setViewMode('inactive')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'inactive'
+                                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                        >
+                            Inactive Profiles
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0 justify-between md:justify-end">
                     <button
                         onClick={handleOpenCreateModal}
                         className="flex items-center gap-2 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
@@ -149,7 +180,10 @@ const ProfileManagement = () => {
                         <span className="hidden sm:inline">Create Profile</span>
                     </button>
                 </div>
+            </div>
 
+            {/* Filters Area */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-slate-800/50">
                 <div className="flex gap-3 w-full md:w-auto">
                     <CustomSelect
                         name="filterStatus"
@@ -204,117 +238,159 @@ const ProfileManagement = () => {
                                 </td>
                             </tr>
                         ) : (
-                            profiles.map((profile) => (
-                                <tr key={profile._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            {profile.photos?.[0]?.url ? (
-                                                <img
-                                                    src={profile.photos[0].url}
-                                                    alt="Profile"
-                                                    className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                                                />
-                                            ) : (
-                                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500">
-                                                    {profile.firstName?.[0]}
-                                                </div>
-                                            )}
-                                            <div>
-                                                <p className="font-medium text-slate-900 dark:text-white">{profile.firstName}</p>
-                                                <p className="text-xs text-slate-500">{new Date(profile.createdAt).toLocaleDateString()}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-sm text-slate-600 dark:text-slate-300">
-                                        {profile.profileCode}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex gap-2">
-                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${profile.isPublished
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                                }`}>
-                                                {profile.isPublished ? <CheckCircle className="w-3 h-3" /> : <Loader2 className="w-3 h-3" />}
-                                                {profile.isPublished ? 'Published' : 'Draft'}
-                                            </span>
+                            (() => {
+                                let lastDate = null;
+                                const rows = [];
 
-                                            {!profile.isActive && (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                                                    <XCircle className="w-3 h-3" /> Inactive
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-slate-500">
-                                        {profile.userId?.email || 'N/A'}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {editingUnlocks?.id === profile._id ? (
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={editingUnlocks.value}
-                                                    onChange={(e) => setEditingUnlocks({ ...editingUnlocks, value: e.target.value })}
-                                                    className="w-16 px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
-                                                />
-                                                <button
-                                                    onClick={() => handleUpdateUnlocks(profile._id, profile.subscriptionId)}
-                                                    disabled={updateLoading}
-                                                    className="p-1 min-w-[28px] text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded flex items-center justify-center transition-colors disabled:opacity-50"
-                                                >
-                                                    {updateLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-xs font-bold">Save</span>}
-                                                </button>
-                                                <button
-                                                    onClick={() => setEditingUnlocks(null)}
-                                                    disabled={updateLoading}
-                                                    className="p-1 min-w-[28px] text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center justify-center transition-colors disabled:opacity-50"
-                                                >
-                                                    <span className="text-xs font-bold">Cancel</span>
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                <span className={`font-medium ${profile.hasSubscription ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`}>
-                                                    {profile.unlocksLeft}
-                                                </span>
-                                                {profile.hasSubscription && (
-                                                    <button
-                                                        onClick={() => setEditingUnlocks({ id: profile._id, value: profile.unlocksLeft, subId: profile.subscriptionId })}
-                                                        className="text-xs text-blue-500 hover:underline"
-                                                    >
-                                                        Edit
-                                                    </button>
+                                profiles.forEach((profile) => {
+                                    if (viewMode === 'inactive') {
+                                        const dateStr = profile.inactiveDate
+                                            ? new Date(profile.inactiveDate).toLocaleDateString()
+                                            : profile.deletedAt
+                                                ? new Date(profile.deletedAt).toLocaleDateString()
+                                                : 'Unknown Date';
+
+                                        if (dateStr !== lastDate) {
+                                            const countForDate = profiles.filter(p => {
+                                                const d = p.inactiveDate
+                                                    ? new Date(p.inactiveDate).toLocaleDateString()
+                                                    : p.deletedAt
+                                                        ? new Date(p.deletedAt).toLocaleDateString()
+                                                        : 'Unknown Date';
+                                                return d === dateStr;
+                                            }).length;
+
+                                            rows.push(
+                                                <tr key={`date-${dateStr}`} className="bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                                                    <td colSpan="6" className="px-6 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                                        {dateStr !== 'Unknown Date'
+                                                            ? `On ${dateStr}, ${countForDate} user${countForDate !== 1 ? 's' : ''} deleted their profile`
+                                                            : `${countForDate} user${countForDate !== 1 ? 's' : ''} blocked/inactive with unknown date`
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            );
+                                            lastDate = dateStr;
+                                        }
+                                    }
+
+                                    rows.push(
+                                        <tr key={profile._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    {profile.photos?.[0]?.url ? (
+                                                        <img
+                                                            src={profile.photos[0].url}
+                                                            alt="Profile"
+                                                            className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500">
+                                                            {profile.firstName?.[0]}
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="font-medium text-slate-900 dark:text-white">{profile.firstName}</p>
+                                                        <p className="text-xs text-slate-500">{new Date(profile.createdAt).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-sm text-slate-600 dark:text-slate-300">
+                                                {profile.profileCode}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex gap-2">
+                                                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${profile.isPublished
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                                        }`}>
+                                                        {profile.isPublished ? <CheckCircle className="w-3 h-3" /> : <Loader2 className="w-3 h-3" />}
+                                                        {profile.isPublished ? 'Published' : 'Draft'}
+                                                    </span>
+
+                                                    {!profile.isActive && profile.inactiveDate && (
+                                                        <div className="flex flex-col gap-1 items-start mt-1">
+                                                            <span className="text-[10px] text-slate-500 italic">
+                                                                Since: {new Date(profile.inactiveDate || profile.deletedAt).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-slate-500">
+                                                {profile.userId?.email || 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {editingUnlocks?.id === profile._id ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={editingUnlocks.value}
+                                                            onChange={(e) => setEditingUnlocks({ ...editingUnlocks, value: e.target.value })}
+                                                            className="w-16 px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
+                                                        />
+                                                        <button
+                                                            onClick={() => handleUpdateUnlocks(profile._id, profile.subscriptionId)}
+                                                            disabled={updateLoading}
+                                                            className="p-1 min-w-[28px] text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded flex items-center justify-center transition-colors disabled:opacity-50"
+                                                        >
+                                                            {updateLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-xs font-bold">Save</span>}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setEditingUnlocks(null)}
+                                                            disabled={updateLoading}
+                                                            className="p-1 min-w-[28px] text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center justify-center transition-colors disabled:opacity-50"
+                                                        >
+                                                            <span className="text-xs font-bold">Cancel</span>
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`font-medium ${profile.hasSubscription ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`}>
+                                                            {profile.unlocksLeft}
+                                                        </span>
+                                                        {profile.hasSubscription && (
+                                                            <button
+                                                                onClick={() => setEditingUnlocks({ id: profile._id, value: profile.unlocksLeft, subId: profile.subscriptionId })}
+                                                                className="text-xs text-blue-500 hover:underline"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        )}
+                                                        {!profile.hasSubscription && (
+                                                            <span className="text-xs text-slate-400">(No Sub)</span>
+                                                        )}
+                                                    </div>
                                                 )}
-                                                {!profile.hasSubscription && (
-                                                    <span className="text-xs text-slate-400">(No Sub)</span>
-                                                )}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                        <Link
-                                            to={`/profile/${profile._id}`}
-                                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                            title="View Profile"
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                        </Link>
-                                        <button
-                                            onClick={() => handleDelete(profile._id)}
-                                            disabled={deleteLoading === profile._id}
-                                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            title="Delete Profile"
-                                        >
-                                            {deleteLoading === profile._id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <Trash2 className="w-4 h-4" />
-                                            )}
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
+                                            </td>
+                                            <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                <Link
+                                                    to={`/profile/${profile._id}`}
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                    title="View Profile"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDelete(profile._id)}
+                                                    disabled={deleteLoading === profile._id}
+                                                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title="Delete Profile"
+                                                >
+                                                    {deleteLoading === profile._id ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Trash2 className="w-4 h-4" />
+                                                    )}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                });
+
+                                return rows;
+                            })()
                         )}
                     </tbody>
                 </table>

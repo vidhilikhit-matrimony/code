@@ -170,6 +170,10 @@ const profileSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    inactiveDate: {
+        type: Date,
+        default: null
+    },
     isPublished: {
         type: Boolean,
         default: false,

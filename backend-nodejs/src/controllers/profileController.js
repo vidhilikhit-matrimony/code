@@ -883,6 +883,7 @@ const deleteProfile = async (req, res, next) => {
             profile.isDeleted = true;
             profile.isActive = false;
             profile.deletedAt = new Date();
+            profile.inactiveDate = new Date();
             await profile.save();
 
             return res.json({

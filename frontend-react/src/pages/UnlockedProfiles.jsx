@@ -91,7 +91,7 @@ export default function UnlockedProfiles() {
                         return (
                             <div
                                 key={profile._id}
-                                onClick={() => navigate(`/profiles/${profile._id}`)}
+                                onClick={() => navigate(`/profile/${profile._id}`)}
                                 className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300 cursor-pointer group"
                             >
                                 <div className="relative h-64 bg-slate-50 overflow-hidden">

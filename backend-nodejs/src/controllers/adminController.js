@@ -147,7 +147,10 @@ const toggleUserStatus = async (req, res, next) => {
         // Also update profiles associated with this user
         await Profile.updateMany(
             { userId: id },
-            { isActive }
+            {
+                isActive,
+                inactiveDate: isActive ? null : new Date()
+            }
         );
 
         res.status(200).json({
@@ -208,8 +211,12 @@ const deleteUser = async (req, res, next) => {
  */
 const getAllProfilesAdmin = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search, status } = req.query;
+        const { page = 1, limit = 10, search, status, isActive } = req.query;
         const query = {};
+
+        if (isActive !== undefined) {
+            query.isActive = isActive === 'true';
+        }
 
         if (search) {
             query.$or = [
@@ -221,9 +228,14 @@ const getAllProfilesAdmin = async (req, res, next) => {
         if (status === 'published') query.isPublished = true;
         if (status === 'unpublished') query.isPublished = false;
 
+        let sortConfig = { createdAt: -1 };
+        if (isActive === 'false') {
+            sortConfig = { inactiveDate: -1, deletedAt: -1, createdAt: -1 };
+        }
+
         const profiles = await Profile.find(query)
             .populate('userId', 'username email')
-            .sort({ createdAt: -1 })
+            .sort(sortConfig)
             .limit(limit * 1)
             .skip((page - 1) * limit);
 
