@@ -15,6 +15,10 @@ import CreateProfile from '../pages/CreateProfile';
 import Payment from '../pages/Payment';
 import AdminDashboard from '../pages/AdminDashboard';
 import NotFound from '../pages/NotFound';
+import AboutUs from '../pages/AboutUs';
+import ContactUs from '../pages/ContactUs';
+import HelpFaq from '../pages/HelpFaq';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
 
 // Protected Route Component
 export const ProtectedRoute = ({ children }) => {
@@ -93,6 +97,10 @@ const AppRouter = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/contact-us" element={<ContactUs />} />
+        <Route path="/help-faq" element={<HelpFaq />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
         {/* Auth Routes */}
         <Route

@@ -336,8 +336,8 @@ const Home = () => {
             <style>{STYLES}</style>
 
             {/* ── HEADER NAVIGATION ── */}
-            <div className="fixed top-0 left-0 right-0 z-[90] flex items-center justify-between px-6 py-3 bg-white border-b border-[#E8E2D9] shadow-sm">
-                <button onClick={() => navigate('/')} className="flex items-center gap-3 focus:outline-none">
+            <div className="fixed top-0 left-0 right-0 z-[90] flex items-center justify-between px-4 sm:px-6 py-3 bg-white border-b border-[#E8E2D9] shadow-sm">
+                <button onClick={() => navigate('/')} className="flex items-center gap-2 sm:gap-3 focus:outline-none">
                     <img src={LogoImg} alt="VidhiLikhit Logo" className="h-12 w-auto object-contain" />
                     <div className="hidden sm:flex flex-col text-left">
                         <span className="font-serif font-bold text-xl leading-none text-[#2A2321]">VidhiLikhit</span>
@@ -345,6 +345,14 @@ const Home = () => {
                     </div>
                 </button>
                 <div className="flex items-center gap-4">
+                    {/* Navigation Links (Visible on large screens) */}
+                    <div className="hidden xl:flex items-center gap-6 mr-2 text-sm font-bold text-[#5A524D]">
+                        <button onClick={() => navigate('/about-us')} className="hover:text-crimson transition-colors tracking-wide">About Us</button>
+                        <button onClick={() => navigate('/contact-us')} className="hover:text-crimson transition-colors tracking-wide">Contact Us</button>
+                        <button onClick={() => navigate('/help-faq')} className="hover:text-crimson transition-colors tracking-wide">Help / FAQ</button>
+                        <button onClick={() => navigate('/privacy-policy')} className="hover:text-crimson transition-colors tracking-wide">Privacy Policy</button>
+                    </div>
+
                     {!user?.isAdmin && user?.subscriptionStatus === 'active' && (
                         <div className="hidden md:flex items-center px-4 py-2 rounded-md bg-[#FAF8F5] border border-[#E8E2D9] text-[#5A524D] text-sm font-bold">
                             <Star className="w-4 h-4 mr-2 text-gold" /> {user.remainingViews} Unlocks
@@ -378,11 +386,11 @@ const Home = () => {
                             </button>
                         </>
                     ) : (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <button onClick={() => navigate('/login')} className="hidden sm:block font-bold text-sm text-[#5A524D] hover:text-crimson uppercase tracking-wider px-2">
                                 Login
                             </button>
-                            <button onClick={() => navigate('/register')} className="px-6 py-2.5 rounded-md bg-crimson text-white font-bold text-sm uppercase tracking-wider hover:bg-[#7A0217] shadow-md transition-colors">
+                            <button onClick={() => navigate('/register')} className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-md bg-crimson text-white font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-[#7A0217] shadow-md transition-colors">
                                 Register Free
                             </button>
                         </div>
@@ -412,7 +420,7 @@ const Home = () => {
                             Trusted Matrimony Only For Brahmin & Lingayat Communities
                         </div>
 
-                        <h1 className="text-5xl sm:text-6xl font-serif font-bold leading-[1.1] text-white my-6">
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold leading-[1.1] text-white my-6">
                             A Bright Ray of Hope. <br />
                             <span className="text-gold">Built on trust, tradition, and love.</span>
                         </h1>
@@ -433,7 +441,7 @@ const Home = () => {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-6 pt-10 mt-10 border-t border-white/20">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 pt-8 sm:pt-10 mt-8 sm:mt-10 border-t border-white/20">
                             <div>
                                 <h4 className="text-white font-serif font-bold text-3xl mb-1">10K+</h4>
                                 <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Verified Profiles</p>
@@ -636,8 +644,8 @@ const Home = () => {
                                 <span className="w-4 h-1 bg-saffron inline-block"></span> Resources
                             </h4>
                             <ul className="space-y-3 text-sm">
-                                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-                                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+                                <li><a href="/about-us" className="hover:text-white transition-colors">About Us</a></li>
+                                <li><a href="/contact-us" className="hover:text-white transition-colors">Contact Us</a></li>
                                 <li><a href="#" className="hover:text-white transition-colors">Submit Feedback</a></li>
                             </ul>
                         </div>
@@ -648,8 +656,8 @@ const Home = () => {
                                 <span className="w-4 h-1 bg-gold inline-block"></span> Support
                             </h4>
                             <ul className="space-y-3 text-sm">
-                                <li><a href="#" className="hover:text-white transition-colors">Help / FAQs</a></li>
-                                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                                <li><a href="/help-faq" className="hover:text-white transition-colors">Help / FAQs</a></li>
+                                <li><a href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a></li>
                                 <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
                             </ul>
                         </div>

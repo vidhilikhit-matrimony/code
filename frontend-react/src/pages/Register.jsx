@@ -70,7 +70,7 @@ const Register = () => {
         setIsLoading(true);
 
         try {
-            const response = await verifyOTPService(formData.email, otp);
+            const response = await verifyOTPService({ ...formData, otp });
 
             if (response.success) {
                 // Auto-login: store tokens and user data via Redux
