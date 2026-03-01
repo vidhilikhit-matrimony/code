@@ -103,13 +103,8 @@ const register = async (req, res, next) => {
             purpose: 'registration'
         });
 
-        // Create unverified user
-        const user = await User.create({
-            username,
-            email,
-            hashedPassword: password,
-            isVerified: false
-        });
+        // Removed user creation logic from here. 
+        // User will be created in verifyOTP after OTP validation.
 
         // Send OTP email
         await sendRegistrationOTP(email, username, otpCode);
@@ -135,12 +130,38 @@ const register = async (req, res, next) => {
  */
 const verifyOTP = async (req, res, next) => {
     try {
-        const { email, otp } = req.body;
+        const { username, email, password, confirmPassword, otp } = req.body;
 
-        if (!email || !otp) {
+        if (!username || !email || !password || !confirmPassword || !otp) {
             return res.status(400).json({
                 success: false,
-                message: 'Please provide email and OTP'
+                message: 'Please provide all required fields and OTP'
+            });
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Passwords do not match'
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long'
+            });
+        }
+
+        // Re-check if user already exists (in case someone else registered the username/email in the meantime)
+        const existingUser = await User.findOne({
+            $or: [{ email }, { username }]
+        });
+
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'User with this email or username already exists'
             });
         }
 
@@ -171,19 +192,13 @@ const verifyOTP = async (req, res, next) => {
         otpRecord.isUsed = true;
         await otpRecord.save();
 
-        // Update user verification status
-        const user = await User.findOneAndUpdate(
-            { email },
-            { isVerified: true },
-            { new: true }
-        );
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
+        // Create the user now that OTP is verified
+        const user = await User.create({
+            username,
+            email,
+            hashedPassword: password,
+            isVerified: true
+        });
 
         // Generate JWT tokens for auto-login
         const accessToken = generateAccessToken(user._id);
@@ -215,29 +230,22 @@ const verifyOTP = async (req, res, next) => {
  */
 const resendOTP = async (req, res, next) => {
     try {
-        const { email } = req.body;
+        const { email, username } = req.body;
 
-        if (!email) {
+        if (!email || !username) {
             return res.status(400).json({
                 success: false,
-                message: 'Please provide email'
+                message: 'Please provide email and username'
             });
         }
 
-        // Find user
-        const user = await User.findOne({ email });
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
 
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        if (user.isVerified) {
+        if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'Email already verified'
+                message: 'User already exists'
             });
         }
 
@@ -253,7 +261,7 @@ const resendOTP = async (req, res, next) => {
         });
 
         // Send OTP email
-        await sendRegistrationOTP(email, user.username, otpCode);
+        await sendRegistrationOTP(email, username, otpCode);
 
         res.json({
             success: true,

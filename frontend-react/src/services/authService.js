@@ -10,15 +10,15 @@ export const register = async (userData) => {
 /**
  * Verify OTP
  */
-export const verifyOTP = async (email, otp) => {
-    return await api.post('/auth/verify-otp', { email, otp });
+export const verifyOTP = async (verifyData) => {
+    return await api.post('/auth/verify-otp', verifyData);
 };
 
 /**
  * Resend OTP
  */
-export const resendOTP = async (email) => {
-    return await api.post('/auth/resend-otp', { email });
+export const resendOTP = async (email, username) => {
+    return await api.post('/auth/resend-otp', { email, username });
 };
 
 /**

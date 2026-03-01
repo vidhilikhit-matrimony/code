@@ -34,7 +34,7 @@ const AdminDashboard = () => {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3">
                         <div className="p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                             <Shield className="w-8 h-8 text-primary-500" />
@@ -44,8 +44,8 @@ const AdminDashboard = () => {
                             <p className="text-slate-500">Manage your application, users, and subscriptions</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-
+                    <div className="flex items-center gap-3 self-end md:self-auto w-full md:w-auto justify-end">
+                        <RefreshPageButton />
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-rose-600 dark:hover:text-rose-400 transition-colors shadow-sm font-medium"
