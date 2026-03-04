@@ -13,12 +13,13 @@ const UserManagement = () => {
     const [actionLoading, setActionLoading] = useState(null);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [createForm, setCreateForm] = useState({ username: '', email: '', password: '', role: 'user' });
+    const [createForm, setCreateForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'user' });
     const [createLoading, setCreateLoading] = useState(false);
+    const [viewMode, setViewMode] = useState('all');
 
     useEffect(() => {
         fetchUsers();
-    }, [page, search]);
+    }, [page, search, viewMode]);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -28,6 +29,10 @@ const UserManagement = () => {
                 limit: 10,
                 ...(search && { search })
             });
+
+            if (viewMode === 'profile-users') queryParams.append('hasProfile', true);
+            if (viewMode === 'non-profile-users') queryParams.append('hasProfile', false);
+
             const response = await api.get(`/admin/users?${queryParams}`);
             if (response.success) {
                 setUsers(response.data);
@@ -49,7 +54,7 @@ const UserManagement = () => {
             if (response.success) {
                 toast.success('User created successfully');
                 setShowCreateModal(false);
-                setCreateForm({ username: '', email: '', password: '', role: 'user' });
+                setCreateForm({ firstName: '', lastName: '', email: '', password: '', role: 'user' });
                 fetchUsers(); // Refresh the list
             }
         } catch (error) {
@@ -86,7 +91,7 @@ const UserManagement = () => {
     };
 
     const handleDeleteUser = async (user) => {
-        if (!window.confirm(`Are you absolutely sure you want to permanently delete the user "${user.username}"? This action cannot be undone and will delete all their profiles and data.`)) {
+        if (!window.confirm(`Are you absolutely sure you want to permanently delete the user "${user.firstName} ${user.lastName}"? This action cannot be undone and will delete all their profiles and data.`)) {
             return;
         }
 
@@ -120,6 +125,28 @@ const UserManagement = () => {
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center justify-between w-full sm:w-auto gap-4">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">User Management</h2>
+                    <div className="hidden sm:flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg ml-4">
+                        <button
+                            onClick={() => { setViewMode('all'); setPage(1); }}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'all' ? 'bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        >
+                            All Users
+                        </button>
+                        <button
+                            onClick={() => { setViewMode('profile-users'); setPage(1); }}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'profile-users' ? 'bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        >
+                            Profile Users
+                        </button>
+                        <button
+                            onClick={() => { setViewMode('non-profile-users'); setPage(1); }}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'non-profile-users' ? 'bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        >
+                            Non-Profile Users
+                        </button>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 justify-between sm:justify-end">
                     <button
                         onClick={() => setShowCreateModal(true)}
                         className="flex items-center gap-2 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
@@ -128,6 +155,33 @@ const UserManagement = () => {
                         <span className="hidden sm:inline">Create User</span>
                     </button>
                 </div>
+            </div>
+
+            {/* Mobile View Tabs */}
+            <div className="sm:hidden p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg overflow-x-auto scrollbar-hide">
+                    <button
+                        onClick={() => { setViewMode('all'); setPage(1); }}
+                        className={`whitespace-nowrap flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'all' ? 'bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                        All
+                    </button>
+                    <button
+                        onClick={() => { setViewMode('profile-users'); setPage(1); }}
+                        className={`whitespace-nowrap flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'profile-users' ? 'bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                        Profile Users
+                    </button>
+                    <button
+                        onClick={() => { setViewMode('non-profile-users'); setPage(1); }}
+                        className={`whitespace-nowrap flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'non-profile-users' ? 'bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                        Non-Profile
+                    </button>
+                </div>
+            </div>
+
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
                 <div className="relative w-full sm:w-64">
                     <input
                         type="text"
@@ -136,7 +190,6 @@ const UserManagement = () => {
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                     />
-                    <Search className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
                 </div>
             </div>
 
@@ -170,7 +223,7 @@ const UserManagement = () => {
                                 <tr key={user._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div>
-                                            <p className="font-medium text-slate-900 dark:text-white">{user.username}</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">{user.firstName} {user.lastName}</p>
                                             <p className="text-sm text-slate-500">{user.email}</p>
                                         </div>
                                     </td>
@@ -234,107 +287,122 @@ const UserManagement = () => {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-center items-center gap-2">
-                    <button
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                        className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeft className="w-5 h-5 text-slate-500" />
-                    </button>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Page {page} of {totalPages}
-                    </span>
-                    <button
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
-                        className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronRight className="w-5 h-5 text-slate-500" />
-                    </button>
-                </div>
-            )
+            {
+                totalPages > 1 && (
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-center items-center gap-2">
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="w-5 h-5 text-slate-500" />
+                        </button>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Page {page} of {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            disabled={page === totalPages}
+                            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight className="w-5 h-5 text-slate-500" />
+                        </button>
+                    </div>
+                )
             }
 
             {/* Create User Modal */}
-            {showCreateModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in">
-                        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Create New User</h3>
-                            <button
-                                onClick={() => setShowCreateModal(false)}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <form onSubmit={handleCreateUser} className="p-4 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Username</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={createForm.username}
-                                    onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={createForm.email}
-                                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-                                <input
-                                    type="password"
-                                    required
-                                    minLength={8}
-                                    value={createForm.password}
-                                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role</label>
-                                <CustomSelect
-                                    name="role"
-                                    value={createForm.role}
-                                    onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
-                                    options={[
-                                        { value: 'user', label: 'User' },
-                                        { value: 'admin', label: 'Admin' }
-                                    ]}
-                                    placeholder="Select Role"
-                                />
-                            </div>
-                            <div className="pt-4 flex gap-3">
+            {
+                showCreateModal && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in">
+                            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Create New User</h3>
                                 <button
-                                    type="button"
                                     onClick={() => setShowCreateModal(false)}
-                                    className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
+                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={createLoading}
-                                    className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex justify-center items-center"
-                                >
-                                    {createLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create User'}
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
-                        </form>
+                            <form onSubmit={handleCreateUser} className="p-4 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">First Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={createForm.firstName}
+                                            onChange={(e) => setCreateForm({ ...createForm, firstName: e.target.value })}
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={createForm.lastName}
+                                            onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={createForm.email}
+                                        onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        minLength={8}
+                                        value={createForm.password}
+                                        onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role</label>
+                                    <CustomSelect
+                                        name="role"
+                                        value={createForm.role}
+                                        onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
+                                        options={[
+                                            { value: 'user', label: 'User' },
+                                            { value: 'admin', label: 'Admin' }
+                                        ]}
+                                        placeholder="Select Role"
+                                    />
+                                </div>
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCreateModal(false)}
+                                        className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={createLoading}
+                                        className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex justify-center items-center"
+                                    >
+                                        {createLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create User'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </div >
     );
 };

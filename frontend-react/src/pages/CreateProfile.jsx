@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import {
     User, Calendar, Ruler, Heart, BookOpen, Briefcase, MapPin,
@@ -11,6 +11,8 @@ import { createProfile, getMyProfile } from '../services/profileService';
 import CustomSelect from '../components/common/CustomSelect';
 import { updateUser } from '../redux/slices/authSlice';
 import ImageCropModal from '../components/ImageCropModal';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // ─── Step Definitions ───────────────────────────────────────────
 const STEPS = [
@@ -86,8 +88,8 @@ const NAKSHATRAS = [
 const NADIS = ['Adi', 'Madhya', 'Antya', 'Other'];
 
 // ─── Form Field Component ───────────────────────────────────────
-const FormField = ({ label, name, type = 'text', value, onChange, required, options, placeholder, icon: Icon }) => (
-    <div className="space-y-1.5">
+const FormField = ({ label, name, type = 'text', value, onChange, required, options, placeholder, icon: Icon, note, readOnly }) => (
+    <div className="space-y-1.5 group relative">
         <label htmlFor={name} className="label flex items-center gap-1.5">
             {Icon && <Icon className="w-3.5 h-3.5 text-primary-500" />}
             {label} {required && <span className="text-red-500">*</span>}
@@ -111,6 +113,34 @@ const FormField = ({ label, name, type = 'text', value, onChange, required, opti
                 rows={3}
                 className="input resize-none"
                 required={required}
+                {...(options?.minLength ? { minLength: options.minLength } : {})}
+                {...(options?.title ? { title: options.title } : {})}
+                readOnly={readOnly}
+                disabled={readOnly}
+            />
+        ) : type === 'date' ? (
+            <DatePicker
+                id={name}
+                name={name}
+                selected={value ? new Date(value + 'T00:00:00') : null}
+                onChange={(date) => {
+                    if (date) {
+                        const offset = date.getTimezoneOffset();
+                        const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+                        onChange({ target: { name, value: localDate.toISOString().split('T')[0] } });
+                    } else {
+                        onChange({ target: { name, value: '' } });
+                    }
+                }}
+                dateFormat="dd/MM/yyyy"
+                showYearDropdown
+                showMonthDropdown
+                dropdownMode="select"
+                maxDate={new Date()}
+                placeholderText={placeholder || "DD/MM/YYYY"}
+                className={`input w-full ${readOnly ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed text-slate-500' : ''}`}
+                required={required}
+                disabled={readOnly}
             />
         ) : (
             <input
@@ -120,9 +150,17 @@ const FormField = ({ label, name, type = 'text', value, onChange, required, opti
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="input"
-                required={required}
+                {...(options?.minLength ? { minLength: options.minLength } : {})}
+                {...(options?.title ? { title: options.title } : {})}
+                readOnly={readOnly}
+                className={`input ${readOnly ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed text-slate-500' : ''}`}
             />
+        )}
+        {note && !readOnly && <p className="text-[11px] text-slate-500">{note}</p>}
+        {readOnly && (
+            <p className="text-[11px] text-red-500 font-medium opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200">
+                Contact Admin to modify value
+            </p>
         )}
     </div>
 );
@@ -195,8 +233,15 @@ const CreateProfile = () => {
     const adminUserId = queryParams.get('adminUserId');
 
     const dispatch = useDispatch();
+    const { user, sessionSeed } = useSelector((state) => state.auth);
     const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState(INITIAL_FORM);
+
+    // Inject Redux user name into the initial form state
+    const [formData, setFormData] = useState({
+        ...INITIAL_FORM,
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || ''
+    });
     const [photoFile, setPhotoFile] = useState(null);
     const [photoPreview, setPhotoPreview] = useState(null);
     const [galleryFiles, setGalleryFiles] = useState([]);
@@ -213,7 +258,7 @@ const CreateProfile = () => {
     // Track if form has unsaved changes
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    // Handle beforeunload to warn about unsaved changes
+    // Handle beforeunload to warn about unsaved changes (when closing tab/browser)
     useEffect(() => {
         const handleBeforeUnload = (e) => {
             if (hasUnsavedChanges) {
@@ -224,11 +269,13 @@ const CreateProfile = () => {
         };
 
         window.addEventListener('beforeunload', handleBeforeUnload);
-
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [hasUnsavedChanges]);
+
+    // Handle React Router navigation away from the page
+    // Note: useBlocker is not fully supported in standard BrowserRouter in React Router v6.
+    // To block internal navigation completely, the AppRouter needs to be migrated to createBrowserRouter.
+    // For now, we rely on beforeunload for tab closing, and custom checks on form buttons.
 
     // Fetch existing profile on mount
     useEffect(() => {
@@ -522,7 +569,7 @@ const CreateProfile = () => {
     // ── Loading State ───────────────────────────────────────────
     if (loadingProfile) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-orange-50 dark:bg-slate-900 flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-3" />
                     <p className="text-slate-500">Loading profile...</p>
@@ -536,13 +583,14 @@ const CreateProfile = () => {
         switch (step) {
             case 1: return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <FormField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required icon={User} placeholder="Enter your first name" />
-                    <FormField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required icon={User} placeholder="Enter your last name" />
-                    <FormField label="Date of Birth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} required icon={Calendar} />
-                    <FormField label="Birthplace" name="birthPlace" value={formData.birthPlace} onChange={handleChange} required icon={MapPin} placeholder="City, State" />
+                    <FormField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required icon={User} placeholder="Enter your first name" options={{ pattern: "^[A-Za-z\\s]+$", title: "Only alphabets are allowed" }} readOnly={true} />
+                    <FormField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required icon={User} placeholder="Enter your last name" options={{ pattern: "^[A-Za-z\\s]+$", title: "Only alphabets are allowed" }} readOnly={true} />
+                    <FormField label="Date of Birth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} required icon={Calendar} readOnly={isEditMode} />
+                    <FormField label="Time of Birth" name="timeOfBirth" type="time" value={formData.timeOfBirth} onChange={handleChange} required icon={Calendar} />
+                    <FormField label="Birthplace" name="birthPlace" value={formData.birthPlace} onChange={handleChange} required icon={MapPin} placeholder="City, State" options={{ pattern: "^[A-Za-z\\s,]+$", title: "Only alphabets are allowed" }} />
                     <FormField label="Gender" name="gender" type="select" value={formData.gender} onChange={handleChange} required icon={User}
                         options={[{ value: 'm', label: 'Male' }, { value: 'f', label: 'Female' }]} />
-                    <FormField label="Height" name="height" value={formData.height} onChange={handleChange} required icon={Ruler} placeholder="e.g. 5'8&quot;" />
+                    <FormField label="Height (In feet)" name="height" value={formData.height} onChange={handleChange} required icon={Ruler} placeholder="e.g. 5'8&quot;" />
                     <FormField label="Marital Status" name="maritalStatus" type="select" value={formData.maritalStatus} onChange={handleChange} required icon={Heart}
                         options={[
                             { value: 'unmarried', label: 'Unmarried' },
@@ -550,7 +598,7 @@ const CreateProfile = () => {
                             { value: 'widow', label: 'Widow' },
                             { value: 'widower', label: 'Widower' }
                         ]} />
-                    <FormField label="Current Location" name="currentLocation" value={formData.currentLocation} onChange={handleChange} required icon={MapPin} placeholder="e.g. Bangalore, Karnataka" />
+                    <FormField label="Current Location" name="currentLocation" value={formData.currentLocation} onChange={handleChange} required icon={MapPin} placeholder="e.g. Bangalore, Karnataka" options={{ pattern: "^[A-Za-z\\s,]+$", title: "Only alphabets are allowed" }} />
                     <DropdownWithOther
                         label="Country"
                         name="country"
@@ -761,7 +809,6 @@ const CreateProfile = () => {
                         placeholder="Enter your nadi"
                         required={formData.caste !== 'Lingayat'}
                     />
-                    <FormField label="Time of Birth" name="timeOfBirth" type="time" value={formData.timeOfBirth} onChange={handleChange} required icon={Calendar} />
                 </div>
             );
             case 3: return (
@@ -778,16 +825,16 @@ const CreateProfile = () => {
                     <FormField label="Father's Occupation" name="fatherOccupation" value={formData.fatherOccupation} onChange={handleChange} required icon={Briefcase} placeholder="e.g. Businessman, Retired" />
                     <FormField label="Mother's Name" name="motherName" value={formData.motherName} onChange={handleChange} required icon={User} placeholder="Mother's full name" />
                     <FormField label="Mother's Occupation" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} required icon={Briefcase} placeholder="e.g. Homemaker, Teacher" />
-                    <FormField label="Brothers" name="brother" value={formData.brother} onChange={handleChange} required placeholder="e.g. 1 (married)" />
-                    <FormField label="Sisters" name="sister" value={formData.sister} onChange={handleChange} required placeholder="e.g. 2 (1 married)" />
-                    <FormField label="Assets" name="assets" value={formData.assets} onChange={handleChange} required placeholder="e.g. House, Car" />
+                    <FormField label="Number of Brothers" name="brother" value={formData.brother} onChange={handleChange} required placeholder="e.g. 1" note="Add None if no brother" />
+                    <FormField label="Number of sisters" name="sister" value={formData.sister} onChange={handleChange} required placeholder="e.g. 2" note="Add None if no sister" />
+                    <FormField label="Assets" name="assets" value={formData.assets} onChange={handleChange} required placeholder="e.g. House, Car" note="Add None if no assets" />
                 </div>
             );
             case 5: return (
                 <div className="space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <FormField label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleChange} required icon={Phone} placeholder="+91 1234567890" />
-                        <FormField label="Postal Address" name="postalAddress" type="textarea" value={formData.postalAddress} onChange={handleChange} required icon={MapPin} placeholder="Full postal address" />
+                        <FormField label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleChange} required icon={Phone} placeholder="+91 1234567890" options={{ pattern: "^[0-9+\\s]+$", minLength: 10, title: "Minimum 10 numbers/characters required" }} />
+                        <FormField label="Postal Address" name="postalAddress" type="textarea" value={formData.postalAddress} onChange={handleChange} required icon={MapPin} placeholder="Full postal address" options={{ minLength: 15, title: "Minimum 15 characters required" }} />
                     </div>
                 </div>
             );
@@ -796,7 +843,7 @@ const CreateProfile = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-orange-50 dark:bg-slate-900 py-8 px-4">
             <div className="max-w-3xl mx-auto">
                 {/* Header */}
                 <div className="relative text-center mb-8">
@@ -828,11 +875,26 @@ const CreateProfile = () => {
                     {/* Navigation Buttons */}
                     <div className="flex justify-between mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
                         <button
-                            onClick={step === 1 ? () => navigate(-1) : prevStep}
+                            onClick={() => {
+                                if (hasUnsavedChanges) {
+                                    if (window.confirm("You have unsaved changes. Are you sure you want to discard them?")) {
+                                        setHasUnsavedChanges(false);
+                                        navigate(-1);
+                                    }
+                                } else {
+                                    if (step === 1) {
+                                        if (window.confirm("Are you sure you want to cancel the setup without saving?")) {
+                                            navigate(-1);
+                                        }
+                                    } else {
+                                        prevStep();
+                                    }
+                                }
+                            }}
                             className="btn btn-outline flex items-center gap-2"
                         >
                             <ChevronLeft className="w-4 h-4" />
-                            {step === 1 ? 'Cancel' : 'Previous'}
+                            {step === 1 ? 'Cancel Setup' : 'Previous'}
                         </button>
 
                         {step < 5 ? (

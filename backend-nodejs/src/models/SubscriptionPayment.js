@@ -11,8 +11,7 @@ const subscriptionPaymentSchema = new mongoose.Schema({
     },
     planId: {
         type: String,
-        required: true,
-        enum: ['basic', 'standard', 'premium'] // basic=1000, standard=1500, premium=3000
+        required: true
     },
     planViews: {
         type: Number,

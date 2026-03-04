@@ -117,7 +117,7 @@ const SubscriptionManagement = () => {
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                                                {payment.userId?.username || 'Unknown User'}
+                                                {payment.userId?.firstName && payment.userId?.lastName ? `${payment.userId.firstName} ${payment.userId.lastName}` : (payment.userId?.email || 'Unknown User')}
                                             </h3>
                                             <p className="text-slate-500 text-sm">{payment.userId?.email}</p>
                                             <p className="text-xs text-slate-400 font-mono mt-1">ID: {payment.userId?._id}</p>
@@ -145,7 +145,10 @@ const SubscriptionManagement = () => {
 
                                     <div className="flex flex-wrap gap-3 pt-2">
                                         <button
-                                            onClick={() => setVerifyModal({ id: payment._id, planViews: payment.planViews })}
+                                            onClick={() => {
+                                                setVerifyModal({ id: payment._id, planViews: payment.planViews });
+                                                setOverrideViews((payment.planViews || '').toString());
+                                            }}
                                             className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                         >
                                             <Check className="w-4 h-4" /> Approve
@@ -195,7 +198,7 @@ const SubscriptionManagement = () => {
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                                                {payment.userId?.username || 'Unknown User'}
+                                                {payment.userId?.firstName && payment.userId?.lastName ? `${payment.userId.firstName} ${payment.userId.lastName}` : (payment.userId?.email || 'Unknown User')}
                                             </h3>
                                             <p className="text-slate-500 text-sm">{payment.userId?.email}</p>
                                             <p className="text-xs text-slate-400 font-mono mt-1">ID: {payment.userId?._id}</p>
@@ -250,19 +253,30 @@ const SubscriptionManagement = () => {
                                 <div className="relative">
                                     <input
                                         type="number"
-                                        value={overrideViews || verifyModal.planViews}
-                                        onChange={(e) => setOverrideViews(e.target.value)}
+                                        value={overrideViews}
+                                        onChange={(e) => {
+                                            let val = e.target.value;
+                                            if (val.length > 3) val = val.slice(0, 3);
+                                            if (parseInt(val) > 999) val = "999";
+                                            setOverrideViews(val);
+                                        }}
                                         className="input pr-16"
                                         min="1"
+                                        max="999"
                                     />
                                     <span className="absolute right-3 top-2.5 text-sm text-slate-400">
                                         views
                                     </span>
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                                <p className="text-xs text-green-600 mt-2 flex items-center gap-1 font-semibold">
                                     <AlertTriangle className="w-3 h-3" />
-                                    Default for this plan is {verifyModal.planViews}. You can override this value.
+                                    (Max you can give {verifyModal.planViews > 999 ? verifyModal.planViews : '999'} profiles to unlock if you override number)
                                 </p>
+                                {overrideViews && Number(overrideViews) !== Number(verifyModal.planViews) && (
+                                    <p className="text-xs text-rose-500 mt-2 font-semibold bg-rose-50 p-2 rounded border border-rose-100">
+                                        Warning: You are overriding the subscribed limit. The user is entitled to only {verifyModal.planViews} profiles as per the current subscription payment.
+                                    </p>
+                                )}
                             </div>
                         )}
 

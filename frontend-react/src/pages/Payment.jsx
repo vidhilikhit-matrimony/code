@@ -7,21 +7,42 @@ import api from '../services/api';
 import qrCodeImg from '../assets/payment-qr.jpeg';
 
 
-const PLANS = [
-    { id: 'basic', name: 'Basic Plan', amount: 1000, views: 30, color: 'bg-blue-500' },
-    { id: 'standard', name: 'Standard Plan', amount: 1500, views: 50, color: 'bg-purple-500', popular: true },
-    { id: 'premium', name: 'Premium Plan', amount: 3000, views: 120, color: 'bg-amber-500' }
-];
-
 const Payment = () => {
     const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
-    const [selectedPlan, setSelectedPlan] = useState(PLANS[1].id); // Default to Standard
+
+    // Dynamic Plans State
+    const [plans, setPlans] = useState([]);
+    const [loadingPlans, setLoadingPlans] = useState(true);
+    const [selectedPlan, setSelectedPlan] = useState('');
+
     const [transactionId, setTransactionId] = useState('');
     const [screenshot, setScreenshot] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [step, setStep] = useState(1); // 1: Select Plan, 2: Payment & Upload
+
+    // Fetch active plans on mount
+    React.useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                const response = await api.get('/plans/active');
+                const activePlans = response.data || [];
+                setPlans(activePlans);
+
+                if (activePlans.length > 0) {
+                    const popularPlan = activePlans.find(p => p.popular) || activePlans[0];
+                    setSelectedPlan(popularPlan._id);
+                }
+            } catch (error) {
+                console.error('Failed to fetch plans:', error);
+                toast.error('Failed to load subscription plans');
+            } finally {
+                setLoadingPlans(false);
+            }
+        };
+        fetchPlans();
+    }, []);
 
     const handleScreenshotChange = (e) => {
         const file = e.target.files[0];
@@ -69,7 +90,26 @@ const Payment = () => {
         }
     };
 
-    const currentPlan = PLANS.find(p => p.id === selectedPlan);
+    const currentPlan = plans.find(p => p._id === selectedPlan) || {};
+
+    if (loadingPlans) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+                <Loader2 className="w-10 h-10 animate-spin text-primary-500" />
+            </div>
+        );
+    }
+
+    if (plans.length === 0) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 text-center px-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-gray-200">No Plans Available</h2>
+                    <p className="text-slate-500 mt-2">Subscription plans are currently being updated. Please try again later.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
@@ -118,13 +158,13 @@ const Payment = () => {
                         <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
                             Select a Plan
                         </h2>
-                        {PLANS.map((plan) => (
+                        {plans.map((plan) => (
                             <div
-                                key={plan.id}
-                                onClick={() => setSelectedPlan(plan.id)}
+                                key={plan._id}
+                                onClick={() => setSelectedPlan(plan._id)}
                                 className={`
                                     relative cursor-pointer rounded-xl p-6 border-2 transition-all duration-300
-                                    ${selectedPlan === plan.id
+                                    ${selectedPlan === plan._id
                                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10 shadow-md'
                                         : 'border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'}
                                 `}
@@ -142,7 +182,7 @@ const Payment = () => {
                                     </div>
                                     <div className="text-right">
                                         <div className="text-2xl font-bold text-slate-900 dark:text-white">₹{plan.amount}</div>
-                                        {selectedPlan === plan.id && (
+                                        {selectedPlan === plan._id && (
                                             <div className="flex justify-end mt-2">
                                                 <div className="bg-primary-500 text-white rounded-full p-1">
                                                     <Check className="w-4 h-4" />

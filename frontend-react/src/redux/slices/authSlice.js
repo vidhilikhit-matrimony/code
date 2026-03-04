@@ -50,6 +50,8 @@ const authSlice = createSlice({
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
             localStorage.removeItem('sessionSeed');
+            // Clear sessionStorage to reset modal states when logging out
+            sessionStorage.clear();
         },
         updateUser: (state, action) => {
             state.user = { ...state.user, ...action.payload };

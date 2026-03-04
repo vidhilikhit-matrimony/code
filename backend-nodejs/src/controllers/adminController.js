@@ -46,12 +46,22 @@ const getDashboardStats = async (req, res, next) => {
  */
 const getAllUsers = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search } = req.query;
+        const { page = 1, limit = 10, search, hasProfile } = req.query;
         const query = {};
+
+        if (hasProfile !== undefined) {
+            const profileUserIds = await Profile.distinct('userId');
+            if (hasProfile === 'true') {
+                query._id = { $in: profileUserIds };
+            } else {
+                query._id = { $nin: profileUserIds };
+            }
+        }
 
         if (search) {
             query.$or = [
-                { username: { $regex: search, $options: 'i' } },
+                { firstName: { $regex: search, $options: 'i' } },
+                { lastName: { $regex: search, $options: 'i' } },
                 { email: { $regex: search, $options: 'i' } }
             ];
         }
@@ -82,28 +92,27 @@ const getAllUsers = async (req, res, next) => {
  */
 const createUserAccount = async (req, res, next) => {
     try {
-        const { username, email, password, role } = req.body;
+        const { firstName, lastName, email, password, role } = req.body;
 
-        if (!username || !email || !password) {
+        if (!firstName || !lastName || !email || !password) {
             return res.status(400).json({
                 success: false,
-                message: 'Username, email and password are required'
+                message: 'First name, last name, email and password are required'
             });
         }
 
-        const existingUser = await User.findOne({
-            $or: [{ email }, { username }]
-        });
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'User with this email or username already exists'
+                message: 'User with this email already exists'
             });
         }
 
         const user = await User.create({
-            username,
+            firstName,
+            lastName,
             email,
             hashedPassword: password,
             isVerified: true,
@@ -211,10 +220,14 @@ const deleteUser = async (req, res, next) => {
  */
 const getAllProfilesAdmin = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search, status, isActive } = req.query;
+        const { page = 1, limit = 10, search, status, isActive, renewRequired } = req.query;
         const query = {};
 
-        if (isActive !== undefined) {
+        if (renewRequired === 'true') {
+            const subscriptions = await Subscription.find({ remainingViews: { $lte: 5 } });
+            const userIdsWithLowViews = subscriptions.map(sub => sub.userId);
+            query.userId = { $in: userIdsWithLowViews };
+        } else if (isActive !== undefined) {
             query.isActive = isActive === 'true';
         }
 
@@ -234,7 +247,7 @@ const getAllProfilesAdmin = async (req, res, next) => {
         }
 
         const profiles = await Profile.find(query)
-            .populate('userId', 'username email')
+            .populate('userId', 'firstName lastName email')
             .sort(sortConfig)
             .limit(limit * 1)
             .skip((page - 1) * limit);

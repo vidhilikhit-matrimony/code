@@ -33,9 +33,10 @@ const generateProfileHtml = (profile) => {
             @page { margin: 15px; size: A4; }
             body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.4; max-width: 100%; margin: 0; padding: 20px; font-size: 12px; }
             .header { text-align: center; border-bottom: 2px solid #e65100; padding-bottom: 8px; margin-bottom: 15px; }
-            .header h1 { color: #e65100; margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { color: #666; margin: 2px 0 0; font-size: 11px; }
-            
+            .header h1 { color: #e65100; margin: 0 0 4px; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+            .header .sub { color: #666; font-size: 11px; }
+            .owner-contact { margin-top: 6px; font-size: 10px; color: #444; }
+            .owner-contact .sep { margin: 0 6px; color: #ccc; }
             .content-wrapper { display: flex; flex-direction: column; gap: 10px; }
             
             .profile-summary { display: flex; gap: 20px; margin-bottom: 15px; align-items: flex-start; border-bottom: 1px solid #eee; padding-bottom: 15px; }
@@ -83,7 +84,16 @@ const generateProfileHtml = (profile) => {
         <div class="watermark">VIDHILIKHIT MATRIMONY</div>
         <div class="header">
             <h1>VidhiLikhit Matrimony</h1>
-            <p>Trusted & Verified Matrimonial Services</p>
+            <div class="sub">Trusted &amp; Verified Matrimonial Services — Community Profile</div>
+            <div class="owner-contact">
+                <span><strong>Ajeet Allagikar</strong></span>
+                <span class="sep">|</span>
+                <span>📞 +91 8123656445</span>
+                <span class="sep">|</span>
+                <span>✉ support@vidhilikhit.com</span>
+                <span class="sep">|</span>
+                <span>🌐 www.vidhilikhit.com</span>
+            </div>
         </div>
 
         <div class="profile-summary">
@@ -177,7 +187,8 @@ const generateProfileHtml = (profile) => {
         </div>
 
         <div class="footer">
-            <p>Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} | VidhiLikhit Matrimony</p>
+            <div style="margin-bottom: 4px;">Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+            <div>VidhiLikhit Matrimony — For queries call 8123656445, email support@vidhilikhit.com, or visit www.vidhilikhit.com</div>
         </div>
     </body>
     </html>
@@ -326,6 +337,8 @@ const generatePublicProfilesHtml = (profiles, community, gender) => {
                 <span>📞 +91 8123656445</span>
                 <span class="sep">|</span>
                 <span>✉ support@vidhilikhit.com</span>
+                <span class="sep">|</span>
+                <span>🌐 www.vidhilikhit.com</span>
             </div>
             <div class="filter-badge">${filterLabel} • ${profiles.length} Profile${profiles.length !== 1 ? 's' : ''}</div>
         </div>
@@ -347,7 +360,7 @@ const generatePublicProfilesHtml = (profiles, community, gender) => {
             </tbody>
         </table>
 
-        <div class="doc-footer">VidhiLikhit Matrimony — For queries call 8123656445 or email support@vidhilikhit.com</div>
+        <div class="doc-footer">VidhiLikhit Matrimony — For queries call 8123656445, email support@vidhilikhit.com, or visit www.vidhilikhit.com</div>
     </body>
     </html>
     `;
@@ -447,7 +460,7 @@ const generateAdminProfilesHtml = (profiles, community, gender) => {
                 <td style="white-space: pre-line;">${astro}</td>
                 <td style="white-space: pre-line;">${prof}</td>
                 <td style="white-space: pre-line;">${loc}</td>
-                <td><strong>${p.contactNumber || 'N/A'}</strong></td>
+                <td style="white-space: pre-line;"><strong>${p.contactNumber || 'N/A'}</strong><br>${p.postalAddress || 'N/A'}</td>
             </tr>
         `;
     }).join('');
@@ -493,6 +506,8 @@ const generateAdminProfilesHtml = (profiles, community, gender) => {
                 <span>📞 +91 8123656445</span>
                 <span class="sep">|</span>
                 <span>✉ support@vidhilikhit.com</span>
+                <span class="sep">|</span>
+                <span>🌐 www.vidhilikhit.com</span>
             </div>
             <div>
                 <span class="admin-badge-header">ADMIN ONLY</span>
@@ -510,7 +525,7 @@ const generateAdminProfilesHtml = (profiles, community, gender) => {
                     <th style="width: 16%;">Gotra, Rashi, Nakshatra, Nadi</th>
                     <th style="width: 16%;">Edu, Occ & Income</th>
                     <th style="width: 16%;">Location (Current & Job)</th>
-                    <th style="width: 16%;">Phone Number</th>
+                    <th style="width: 16%;">Contact & Address</th>
                 </tr>
             </thead>
             <tbody>

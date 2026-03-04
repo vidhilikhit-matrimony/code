@@ -18,8 +18,8 @@ const isAdmin = (req, res, next) => {
         const adminUsernames = [config.admin.username, 'admin', 'vasudev'];
 
         const isAdminUser =
-            adminUsernames.includes(req.user.username.toLowerCase()) ||
-            adminEmails.includes(req.user.email.toLowerCase());
+            (req.user.firstName && adminUsernames.includes(req.user.firstName.toLowerCase())) ||
+            (req.user.email && adminEmails.includes(req.user.email.toLowerCase()));
 
         if (!isAdminUser) {
             return res.status(403).json({
@@ -48,8 +48,8 @@ const checkIsAdmin = (user) => {
     const adminUsernames = [config.admin.username, 'admin', 'vasudev'];
 
     return (
-        adminUsernames.includes(user.username.toLowerCase()) ||
-        adminEmails.includes(user.email.toLowerCase())
+        (user.firstName && adminUsernames.includes(user.firstName.toLowerCase())) ||
+        (user.email && adminEmails.includes(user.email.toLowerCase()))
     );
 };
 

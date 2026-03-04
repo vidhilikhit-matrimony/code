@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle, UserPlus, X } from 'lucide-react';
+import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle, UserPlus, X, Power } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import CustomSelect from '../common/CustomSelect';
@@ -13,6 +13,7 @@ const ProfileManagement = () => {
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [deleteLoading, setDeleteLoading] = useState(null);
+    const [activatingLoading, setActivatingLoading] = useState(null);
     const [editingUnlocks, setEditingUnlocks] = useState(null); // { id: profileId, value: number, subId: subscriptionId }
     const [updateLoading, setUpdateLoading] = useState(false);
 
@@ -35,8 +36,11 @@ const ProfileManagement = () => {
                 limit: 10,
                 ...(search && { search }),
                 ...(filterStatus !== 'all' && { status: filterStatus }),
-                isActive: viewMode === 'active'
             });
+
+            if (viewMode === 'active') queryParams.append('isActive', true);
+            else if (viewMode === 'inactive') queryParams.append('isActive', false);
+            else if (viewMode === 'renew-required') queryParams.append('renewRequired', true);
 
             const response = await api.get(`/admin/profiles?${queryParams}`);
             if (response.success) {
@@ -68,6 +72,57 @@ const ProfileManagement = () => {
             toast.error('Failed to delete profile');
         } finally {
             setDeleteLoading(null);
+        }
+    };
+
+    const handleToggleProfileStatus = async (profile) => {
+        const isCurrentlyActive = profile.isActive;
+        const newStatus = !isCurrentlyActive;
+        const actionText = newStatus ? 'activate' : 'deactivate (hide)';
+
+        console.log(`Toggling profile status to: ${newStatus}`, profile);
+        if (!window.confirm(`Are you sure you want to ${actionText} this profile?`)) {
+            return;
+        }
+
+        const userId = profile.userId?._id || profile.userId;
+        console.log("Extracted userId:", userId);
+
+        if (!userId) {
+            toast.error(`Cannot ${actionText}: User ID is missing from profile data.`);
+            return;
+        }
+
+        setActivatingLoading(profile._id);
+
+        try {
+            console.log(`Making PUT request to /admin/users/${userId}/status with { isActive: ${newStatus} }`);
+            const response = await api.put(`/admin/users/${userId}/status`, { isActive: newStatus });
+            console.log("API Response:", response);
+
+            if (response.success) {
+                toast.success(`Profile ${newStatus ? 'activated' : 'deactivated'} successfully`);
+
+                // If we are looking at a specific filtered view, we might want to remove it
+                if ((viewMode === 'inactive' && newStatus) || (viewMode === 'active' && !newStatus)) {
+                    setProfiles(profiles.filter(p => p._id !== profile._id));
+                } else {
+                    // Update the profile locally if viewing 'all' or another view where it should stay
+                    setProfiles(profiles.map(p =>
+                        p._id === profile._id
+                            ? { ...p, isActive: newStatus, inactiveDate: newStatus ? null : new Date().toISOString() }
+                            : p
+                    ));
+                }
+            } else {
+                console.error("API indicated failure:", response);
+                toast.error(response.message || `Failed to ${actionText} profile`);
+            }
+        } catch (error) {
+            console.error(`Error ${actionText}ing profile:`, error);
+            toast.error(error.message || `Failed to ${actionText} profile`);
+        } finally {
+            setActivatingLoading(null);
         }
     };
 
@@ -167,6 +222,15 @@ const ProfileManagement = () => {
                                 }`}
                         >
                             Inactive Profiles
+                        </button>
+                        <button
+                            onClick={() => setViewMode('renew-required')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'renew-required'
+                                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                        >
+                            Renew Required
                         </button>
                     </div>
                 </div>
@@ -365,6 +429,23 @@ const ProfileManagement = () => {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleToggleProfileStatus(profile)}
+                                                    disabled={activatingLoading === profile._id}
+                                                    className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${profile.isActive
+                                                        ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                                                        : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                                        }`}
+                                                    title={profile.isActive ? "Deactivate Profile" : "Activate Profile"}
+                                                >
+                                                    {activatingLoading === profile._id ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : profile.isActive ? (
+                                                        <Power className="w-4 h-4" /> // Replace with PowerOff if available, else Power works
+                                                    ) : (
+                                                        <Power className="w-4 h-4" />
+                                                    )}
+                                                </button>
                                                 <Link
                                                     to={`/profile/${profile._id}`}
                                                     className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -444,7 +525,7 @@ const ProfileManagement = () => {
                                     {eligibleUsers.map(user => (
                                         <div key={user._id} className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <div>
-                                                <p className="font-medium text-slate-900 dark:text-white">{user.username}</p>
+                                                <p className="font-medium text-slate-900 dark:text-white">{user.firstName} {user.lastName}</p>
                                                 <p className="text-xs text-slate-500">{user.email}</p>
                                             </div>
                                             <button

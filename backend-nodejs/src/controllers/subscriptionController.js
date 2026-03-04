@@ -1,4 +1,4 @@
-const { SubscriptionPayment, Subscription, User } = require('../models');
+const { SubscriptionPayment, Subscription, User, Plan } = require('../models');
 const { uploadToS3, getPresignedUrl } = require('../services/uploadService');
 
 /**
@@ -24,18 +24,19 @@ const submitPayment = async (req, res, next) => {
             });
         }
 
-        // Define plans
-        const plans = {
-            'basic': { amount: 1000, views: 30 },
-            'standard': { amount: 1500, views: 50 },
-            'premium': { amount: 3000, views: 100 }
-        };
-
-        const plan = plans[planId];
+        // Fetch plan from DB
+        const plan = await Plan.findById(planId);
         if (!plan) {
             return res.status(400).json({
                 success: false,
                 message: 'Invalid plan selected'
+            });
+        }
+
+        if (!plan.isActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'Selected plan is no longer active'
             });
         }
 
@@ -81,7 +82,7 @@ const submitPayment = async (req, res, next) => {
 const getPendingPayments = async (req, res, next) => {
     try {
         const payments = await SubscriptionPayment.find({ status: 'pending' })
-            .populate('userId', 'username email profileCode')
+            .populate('userId', 'firstName lastName email profileCode')
             .sort({ requestedAt: -1 });
 
         // Generate presigned URLs for screenshots
@@ -111,7 +112,7 @@ const getPendingPayments = async (req, res, next) => {
 const getRecentApprovedPayments = async (req, res, next) => {
     try {
         const payments = await SubscriptionPayment.find({ status: 'approved' })
-            .populate('userId', 'username email profileCode')
+            .populate('userId', 'firstName lastName email profileCode')
             .sort({ processedAt: -1, requestedAt: -1 })
             .limit(5);
 

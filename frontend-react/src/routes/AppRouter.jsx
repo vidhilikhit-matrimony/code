@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { getCurrentUser, clearNotification } from '../services/authService';
@@ -21,6 +21,8 @@ import AboutUs from '../pages/AboutUs';
 import ContactUs from '../pages/ContactUs';
 import HelpFaq from '../pages/HelpFaq';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
+import TermsOfService from '../pages/TermsOfService';
+import SubscriptionWarningModal from '../components/SubscriptionWarningModal';
 
 // Protected Route Component
 export const ProtectedRoute = ({ children }) => {
@@ -59,6 +61,15 @@ export const PublicRoute = ({ children }) => {
   return children;
 };
 
+const RouteChangeListener = () => {
+  const location = useLocation();
+  useEffect(() => {
+    // Dismiss specific admin approval notification or all 
+    toast.dismiss('admin-approval-toast');
+  }, [location]);
+  return null;
+};
+
 const AppRouter = () => {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -75,7 +86,7 @@ const AppRouter = () => {
             // Check for persistent pending notifications
             if (user.pendingNotification) {
               toast.success(user.pendingNotification, {
-                duration: 30000,
+                duration: 20000,
                 id: 'admin-approval-toast', // prevent duplicates
                 className: '!bg-gradient-to-r !from-emerald-500 !to-teal-600 !text-white !border-emerald-400 !shadow-2xl',
                 style: {
@@ -120,6 +131,8 @@ const AppRouter = () => {
 
   return (
     <BrowserRouter>
+      <RouteChangeListener />
+      <SubscriptionWarningModal />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
@@ -127,6 +140,7 @@ const AppRouter = () => {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/help-faq" element={<HelpFaq />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
 
         {/* Auth Routes */}
         <Route

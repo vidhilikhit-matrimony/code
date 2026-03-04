@@ -16,7 +16,7 @@ const DetailRow = ({ icon: Icon, label, value, iconColor = 'text-primary-500', c
     if (!value || value === 'N/A') return null;
     return (
         <div className={`flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors ${className}`}>
-            <div className={`p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm flex-shrink-0 ${iconColor}`}>
+            <div className={`p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 shadow-sm flex-shrink-0 ${iconColor}`}>
                 <Icon className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -29,8 +29,8 @@ const DetailRow = ({ icon: Icon, label, value, iconColor = 'text-primary-500', c
 
 // ─── Section Component ──────────────────────────────────────────
 const Section = ({ title, children, icon: Icon, iconColor = 'text-slate-500' }) => (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6 transition-all hover:shadow-md">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex items-center gap-3">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden mb-6 transition-all hover:shadow-md">
+        <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 flex items-center gap-3">
             {Icon && <Icon className={`w-5 h-5 ${iconColor}`} />}
             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
                 {title}
@@ -44,7 +44,7 @@ const Section = ({ title, children, icon: Icon, iconColor = 'text-slate-500' }) 
 
 // ─── Loading Skeleton ───────────────────────────────────────────
 const DetailSkeleton = () => (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-orange-50 dark:bg-slate-900">
         <div className="h-48 md:h-64 bg-slate-200 dark:bg-slate-800 animate-pulse" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 relative z-10 pb-20">
             <div className="flex flex-col md:flex-row gap-8">
@@ -194,7 +194,8 @@ const ProfileDetail = () => {
 
     const isUnlocked = profile.isUnlocked;
     const photos = profile.photos?.length > 0 ? profile.photos : null;
-    const mainPhoto = (photos && photos[selectedPhoto]?.url) || profile.photoUrl;
+    const profilePic = profile.photoUrl || (photos && photos[0]?.url);
+    const galleryPhoto = (photos && photos[selectedPhoto]?.url) || profile.photoUrl;
 
     const ageDisplay = profile.age ? `${profile.age} years` : null;
     const dobDisplay = profile.dateOfBirth
@@ -207,23 +208,44 @@ const ProfileDetail = () => {
     const isOwner = user && profile.userId === user.id;
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-orange-50 dark:bg-slate-900 pb-20">
             {/* ─── Top Navigation Bar ─── */}
-            <div className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 supports-[backdrop-filter]:bg-white/60">
+            <div className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-                    <button
-                        onClick={() => navigate('/profiles')}
-                        className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium group"
-                    >
-                        <div className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
-                            <ArrowLeft className="w-4 h-4" />
-                        </div>
-                        <span className="hidden sm:inline">Back to Search</span>
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => {
+                                // If they have a router history, go back to previous, else default to /profiles
+                                if (window.history.length > 2) {
+                                    navigate(-1);
+                                } else {
+                                    navigate('/profiles');
+                                }
+                            }}
+                            className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium group"
+                        >
+                            <div className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
+                                <ArrowLeft className="w-4 h-4" />
+                            </div>
+                            <span className="hidden sm:inline">Back</span>
+                        </button>
+
+                        {user?.role === 'admin' && (
+                            <button
+                                onClick={() => navigate('/admin')}
+                                className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium group border-l border-slate-200 dark:border-slate-700 pl-4"
+                            >
+                                <div className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-colors">
+                                    <LayoutDashboard className="w-4 h-4" />
+                                </div>
+                                <span className="hidden sm:inline">Dashboard</span>
+                            </button>
+                        )}
+                    </div>
 
                     <div className="flex items-center gap-3 sm:gap-4">
                         {/* Profile Code Badge */}
-                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700">
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full">
                             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wider uppercase">ID</span>
                             <span className="text-sm text-slate-900 dark:text-white font-bold tracking-wide">{profile.profileCode}</span>
                         </div>
@@ -232,9 +254,9 @@ const ProfileDetail = () => {
                         {(isUnlocked || isOwner || user?.role === 'admin') && (
                             <button
                                 onClick={handleDownloadPdf}
-                                disabled={isDownloading}
-                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:border-primary-300 dark:hover:border-primary-700 hover:text-primary-600 dark:hover:text-primary-400 hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Download Biodata"
+                                disabled={isDownloading || (!isOwner && user?.role !== 'admin' && (!user?.remainingViews || user?.remainingViews <= 0))}
+                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={(!isOwner && user?.role !== 'admin' && (!user?.remainingViews || user?.remainingViews <= 0)) ? "Active subscription required to download" : "Download Biodata"}
                             >
                                 {isDownloading ? <Loader2 className="w-4 h-4 animate-spin text-primary-600" /> : <Download className="w-4 h-4" />}
                                 <span className="hidden sm:inline">{isDownloading ? 'Generating...' : 'Download PDF'}</span>
@@ -268,7 +290,7 @@ const ProfileDetail = () => {
                             {user?.photoUrl ? (
                                 <img
                                     src={user.photoUrl}
-                                    alt={user.firstName || user.username}
+                                    alt={user.firstName || user.lastName}
                                     className="w-9 h-9 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-sm cursor-pointer hover:border-primary-200 transition-colors"
                                     onClick={() => navigate('/profile/me')}
                                 />
@@ -277,7 +299,7 @@ const ProfileDetail = () => {
                                     className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 text-white flex items-center justify-center font-bold text-sm shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
                                     onClick={() => navigate('/profile/me')}
                                 >
-                                    {(user?.firstName || user?.username || 'U').charAt(0).toUpperCase()}
+                                    {(user?.firstName || user?.lastName || 'U').charAt(0).toUpperCase()}
                                 </div>
                             )}
                             <button
@@ -293,7 +315,7 @@ const ProfileDetail = () => {
             </div>
 
             {/* ─── Hero Banner ─── */}
-            <div className="relative bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800">
+            <div className="relative bg-white dark:bg-slate-800">
                 {/* Subtle Pattern Background Banner instead of bright gradient */}
                 <div className="absolute inset-0 h-48 md:h-64 overflow-hidden bg-slate-100 dark:bg-slate-800/80">
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNjYmQ1ZTEiIGZpbGwtb3BhY2l0eT0iMC40Ii8+PC9zdmc+')] [mask-image:linear-gradient(to_bottom,white,transparent)]"></div>
@@ -309,13 +331,18 @@ const ProfileDetail = () => {
                             <div className="absolute inset-0 bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] -rotate-3 opacity-20 group-hover:-rotate-6 transition-transform duration-300"></div>
 
                             <div
-                                className={`relative w-full h-full rounded-[2rem] md:rounded-[2.5rem] border-4 md:border-8 border-white dark:border-slate-800 shadow-xl overflow-hidden bg-slate-100 dark:bg-slate-700 ${mainPhoto ? 'cursor-pointer' : ''}`}
-                                onClick={() => mainPhoto && setIsPhotoModalOpen(true)}
+                                className={`relative w-full h-full rounded-[2rem] md:rounded-[2.5rem] border-4 md:border-8 border-white dark:border-slate-800 shadow-xl overflow-hidden bg-slate-100 dark:bg-slate-700 ${profilePic ? 'cursor-pointer' : ''}`}
+                                onClick={() => {
+                                    if (profilePic) {
+                                        setSelectedPhoto(0);
+                                        setIsPhotoModalOpen(true);
+                                    }
+                                }}
                             >
-                                {mainPhoto ? (
+                                {profilePic ? (
                                     <div className="group/img w-full h-full relative">
                                         <img
-                                            src={mainPhoto}
+                                            src={profilePic}
                                             alt={profile.firstName}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
                                         />
@@ -364,25 +391,25 @@ const ProfileDetail = () => {
 
                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                                 {ageDisplay && (
-                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
+                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium">
                                         <Calendar className="w-4 h-4 text-primary-500" />
                                         {ageDisplay}
                                     </div>
                                 )}
                                 {profile.height && (
-                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
+                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium">
                                         <Ruler className="w-4 h-4 text-emerald-500" />
                                         {profile.height}
                                     </div>
                                 )}
                                 {profile.maritalStatus && (
-                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium capitalize border border-slate-200 dark:border-slate-700">
+                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium capitalize">
                                         <Heart className="w-4 h-4 text-rose-500" />
                                         {profile.maritalStatus}
                                     </div>
                                 )}
                                 {profile.workingPlace && profile.workingPlace !== 'N/A' && (
-                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
+                                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 px-4 py-2 rounded-xl text-slate-700 dark:text-slate-300 font-medium">
                                         <MapPin className="w-4 h-4 text-blue-500" />
                                         {profile.workingPlace}
                                     </div>
@@ -410,11 +437,11 @@ const ProfileDetail = () => {
                                 <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Manage your profile visibility and settings</p>
 
                                 <div className="flex flex-wrap items-center gap-4 mt-4">
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg shadow-sm">
                                         <span className="text-xs text-slate-500 font-medium">Status:</span>
                                         {profile.isActive ? <span className="text-sm font-bold text-emerald-600 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Active</span> : <span className="text-sm font-bold text-rose-600 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Inactive</span>}
                                     </div>
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg shadow-sm">
                                         <span className="text-xs text-slate-500 font-medium">Visible:</span>
                                         {profile.isPublished ? <span className="text-sm font-bold text-emerald-600 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Yes</span> : <span className="text-sm font-bold text-amber-600 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Pending</span>}
                                     </div>
@@ -448,7 +475,7 @@ const ProfileDetail = () => {
 
                         {/* More Photos Gallery */}
                         {photos && photos.length > 1 && (
-                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="font-bold text-slate-800 dark:text-white">Photo Gallery</h3>
                                     <span className="text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md">
@@ -481,7 +508,7 @@ const ProfileDetail = () => {
 
                         {/* Profile Locked Banner (Sidebar for Desktop) */}
                         {!isUnlocked && (
-                            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-xl relative overflow-hidden text-center sm:text-left flex flex-col items-center sm:items-start">
+                            <div className="bg-slate-900 rounded-2xl p-6 shadow-xl relative overflow-hidden text-center sm:text-left flex flex-col items-center sm:items-start">
                                 {/* Decor */}
                                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-primary-500/20 rounded-full blur-2xl"></div>
 
@@ -562,7 +589,7 @@ const ProfileDetail = () => {
                                 </>
                             ) : (
                                 /* Locked placeholders for protected fields */
-                                <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 gap-4">
+                                <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/80 rounded-xl gap-4">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
                                             <Lock className="w-5 h-5 text-slate-500" />
@@ -588,7 +615,7 @@ const ProfileDetail = () => {
             </div>
 
             {/* ─── Photo Viewer Modal ─── */}
-            {isPhotoModalOpen && mainPhoto && (
+            {isPhotoModalOpen && galleryPhoto && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <button
                         onClick={() => setIsPhotoModalOpen(false)}
@@ -599,7 +626,7 @@ const ProfileDetail = () => {
 
                     <div className="relative w-full max-w-5xl h-[80vh] flex items-center justify-center">
                         <img
-                            src={mainPhoto}
+                            src={galleryPhoto}
                             alt={`${profile.firstName}'s photo`}
                             className="max-w-full max-h-full object-contain rounded-lg"
                         />

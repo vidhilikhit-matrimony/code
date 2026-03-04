@@ -6,5 +6,6 @@ module.exports = {
     SubscriptionPayment: require('./SubscriptionPayment'),
     ProfileView: require('./ProfileView'),
     SuccessStory: require('./SuccessStory'),
-    OTP: require('./OTP')
+    OTP: require('./OTP'),
+    Plan: require('./Plan')
 };

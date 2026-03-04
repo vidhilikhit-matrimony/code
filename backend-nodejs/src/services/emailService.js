@@ -27,11 +27,12 @@ const generateOTP = () => {
 /**
  * Send OTP email for registration
  * @param {string} email - Recipient email
- * @param {string} username - User's username
+ * @param {string} firstName - User's first name
+ * @param {string} lastName - User's last name
  * @param {string} otp - OTP code
  * @returns {Promise<boolean>} - Success status
  */
-const sendRegistrationOTP = async (email, username, otp) => {
+const sendRegistrationOTP = async (email, firstName, lastName, otp) => {
   try {
     const mailOptions = {
       from: `"${config.app.name}" <${config.email.auth.user}>`,
@@ -40,7 +41,7 @@ const sendRegistrationOTP = async (email, username, otp) => {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #6366f1;">Welcome to ${config.app.name}!</h2>
-          <p>Hello <strong>${username}</strong>,</p>
+          <p>Hello <strong>${firstName} ${lastName}</strong>,</p>
           <p>Thank you for registering with ${config.app.name}!</p>
           <p>Your verification OTP is:</p>
           <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">

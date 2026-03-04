@@ -3,18 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 
 const STYLES = `
-.text-crimson { color: #9A031E; }
-.bg-crimson { background-color: #9A031E; }
-.border-crimson { border-color: #9A031E; }
 .text-saffron { color: #F05D23; }
 .bg-saffron { background-color: #F05D23; }
 .text-gold { color: #E3B23C; }
 .bg-gold { background-color: #E3B23C; }
 .bg-mandala-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.627 0l.83.83-1.66 1.66-.83-.83.83-.83zM0 54.627l.83.83-1.66 1.66-.83-.83.83-.83zm54.627-54.627l-1.66 1.66-.83-.83 1.66-1.66.83.83zm-54.627 54.627l-1.66 1.66-.83-.83 1.66-1.66.83.83zM15.255 0l.83.83-1.66 1.66-.83-.83.83-.83zm0 54.627l.83.83-1.66 1.66-.83-.83.83-.83zm-15.255-39.372l.83.83-1.66 1.66-.83-.83.83-.83zm54.627 0l.83.83-1.66 1.66-.83-.83.83-.83z' fill='%239A031E' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.627 0l.83.83-1.66 1.66-.83-.83.83-.83zM0 54.627l.83.83-1.66 1.66-.83-.83.83-.83zm54.627-54.627l-1.66 1.66-.83-.83 1.66-1.66.83.83zm-54.627 54.627l-1.66 1.66-.83-.83 1.66-1.66.83.83zM15.255 0l.83.83-1.66 1.66-.83-.83.83-.83zm0 54.627l.83.83-1.66 1.66-.83-.83.83-.83zm-15.255-39.372l.83.83-1.66 1.66-.83-.83.83-.83zm54.627 0l.83.83-1.66 1.66-.83-.83.83-.83z' fill='%23ea580c' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
 .premium-shadow {
-    box-shadow: 0 10px 40px -10px rgba(154, 3, 30, 0.15);
+    box-shadow: 0 10px 40px -10px rgba(234, 88, 12, 0.15);
 }
 `;
 
@@ -26,12 +23,12 @@ const AboutUs = () => {
     }, []);
 
     return (
-        <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#2A2321] selection:bg-crimson selection:text-white bg-mandala-pattern">
+        <div className="min-h-screen bg-[#FAF8F5] font-sans text-[#2A2321] selection:bg-primary-600 selection:text-white bg-mandala-pattern">
             <style>{STYLES}</style>
 
             {/* Header */}
             <div className="fixed top-0 left-0 right-0 z-[90] flex items-center px-4 sm:px-6 py-4 bg-white border-b border-[#E8E2D9] shadow-sm">
-                <button onClick={() => navigate('/')} className="flex items-center gap-2 text-[#5A524D] hover:text-crimson font-bold text-sm transition-colors">
+                <button onClick={() => navigate('/')} className="flex items-center gap-2 text-[#5A524D] hover:text-primary-600 font-bold text-sm transition-colors">
                     <ChevronLeft className="w-5 h-5" /> Back to Home
                 </button>
             </div>
@@ -39,7 +36,7 @@ const AboutUs = () => {
             <section className="py-24 px-4 md:px-8 lg:px-16 max-w-7xl mx-auto mt-12">
                 {/* Title */}
                 <div className="text-center mb-16 max-w-3xl mx-auto">
-                    <span className="text-xs font-bold uppercase tracking-[0.2em] text-crimson mb-2 block">Meeting Our Visionary Leader</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary-600 mb-2 block">Meeting Our Visionary Leader</span>
                     <h1 className="text-4xl sm:text-5xl font-extrabold text-[#2A2321] font-serif mb-6">
                         Mr. Vasudev B. Allagikar
                     </h1>
@@ -49,9 +46,9 @@ const AboutUs = () => {
                 </div>
 
                 {/* Info & Journey */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start bg-white p-8 md:p-12 rounded-xl border border-[#E8E2D9] premium-shadow border-t-4 border-t-crimson">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start bg-white p-8 md:p-12 rounded-xl border border-[#E8E2D9] premium-shadow border-t-4 border-t-primary-600">
                     <div className="w-full relative">
-                        <div className="absolute inset-0 bg-crimson transform translate-x-4 translate-y-4 rounded-xl -z-10 opacity-20"></div>
+                        <div className="absolute inset-0 bg-primary-600 transform translate-x-4 translate-y-4 rounded-xl -z-10 opacity-20"></div>
                         <img
                             src="/images/ceo.png"
                             alt="Mr. Vasudev B. Allagikar"
@@ -72,7 +69,7 @@ const AboutUs = () => {
                             </div>
                         </div>
 
-                        <div className="bg-[#FAF8F5] p-6 rounded-lg border-l-4 border-crimson">
+                        <div className="bg-[#FAF8F5] p-6 rounded-lg border-l-4 border-primary-600">
                             <p className="text-sm font-bold uppercase tracking-wider text-[#B0A8A3] mb-2">Quote</p>
                             <p className="italic text-[#2A2321] font-serif text-lg leading-relaxed">
                                 "Uniting families with faith and tradition, laying the foundation of a trusted platform."
@@ -126,7 +123,7 @@ const AboutUs = () => {
                 </div>
 
                 {/* Mission Text */}
-                <div className="mt-20 bg-[#2A2321] text-white p-12 rounded-xl text-center relative overflow-hidden premium-shadow border-t-4 border-t-crimson">
+                <div className="mt-20 bg-[#2A2321] text-white p-12 rounded-xl text-center relative overflow-hidden premium-shadow border-t-4 border-t-primary-600">
                     <div className="absolute inset-0 opacity-10 bg-mandala-pattern invert"></div>
                     <div className="relative z-10 max-w-4xl mx-auto space-y-6 text-gray-300 leading-relaxed font-medium">
                         <p>
@@ -148,7 +145,7 @@ const AboutUs = () => {
                 {/* Video Message Section */}
                 <div className="mt-20">
                     <div className="text-center mb-12 max-w-3xl mx-auto">
-                        <span className="text-xs font-bold uppercase tracking-[0.2em] text-crimson mb-2 block">A Message from Vasudev</span>
+                        <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary-600 mb-2 block">Premium Matchmaking</span>
                         <h2 className="text-3xl sm:text-4xl font-extrabold text-[#2A2321] font-serif mb-6">Our Commitment to Families</h2>
                         <p className="text-lg text-[#5A524D] leading-relaxed">
                             Watch our founder share his vision and commitment to bringing families together.

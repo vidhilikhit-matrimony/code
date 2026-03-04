@@ -11,7 +11,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Provider store={store}>
             <AppRouter />
             <Toaster
-                position="top-center"
+                position="top-right"
                 richColors
                 closeButton
                 duration={4000}

@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Autoplay } from 'swiper/modules';
+import { Navigation, Autoplay, EffectFade } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import 'swiper/css/effect-fade';
 import 'swiper/css/autoplay';
 import {
     Heart, Users, Shield, Star, Phone, Mail, FileDown,
@@ -329,10 +330,10 @@ function DownloadModal({ isOpen, onClose }) {
 
                             <button
                                 onClick={handleDownload} disabled={isDownloading}
-                                className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-[#9A031E] to-[#b30826] hover:from-[#7a0218] hover:to-[#9A031E] shadow-[0_8px_20px_rgba(154,3,30,0.3)] disabled:opacity-70 transition-all flex justify-center items-center gap-2 tracking-wider uppercase text-sm mt-6"
+                                className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-primary-600 to-[#b30826] hover:from-[#7a0218] hover:to-primary-600 shadow-[0_8px_20px_primary-600/30] disabled:opacity-70 transition-all flex justify-center items-center gap-2 tracking-wider uppercase text-sm mt-6"
                             >
                                 {isDownloading ? (
-                                    <div className="flex items-center gap-2"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Structuring PDF...</div>
+                                    <div className="fixed inset-0 bg-[#FAF8F5] flex items-center justify-center z-50"><div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div></div>
                                 ) : 'Download Profiles Now'}
                             </button>
                         </div>
@@ -352,6 +353,7 @@ const Home = () => {
     const [hasProfile, setHasProfile] = useState(false);
     const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -363,10 +365,10 @@ const Home = () => {
         })();
     }, [isAuthenticated]);
 
-    const handleLogout = () => { dispatch(logout()); navigate('/'); };
+    const handleLogout = () => { dispatch(logout()); navigate('/'); setShowLogoutModal(false); };
 
     return (
-        <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-[#9A031E] selection:text-white">
+        <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-primary-600 selection:text-white">
 
             {/* ── HEADER NAVIGATION ── */}
             <header className="fixed top-0 left-0 right-0 z-[90] bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all duration-300">
@@ -380,24 +382,24 @@ const Home = () => {
                         >
                             <img src={LogoImg} alt="VidhiLikhit Logo" className="h-14 w-auto object-contain transition-transform group-hover:scale-105" />
                             <div className="hidden sm:flex flex-col text-left">
-                                <span className="font-serif font-extrabold text-2xl tracking-tight text-slate-900 group-hover:text-[#9A031E] transition-colors">VidhiLikhit</span>
-                                <span className="text-[9px] uppercase font-bold tracking-[0.3em] text-amber-500 mt-0.5">Matrimony</span>
+                                <span className="font-serif font-extrabold text-2xl tracking-tight text-slate-900 group-hover:text-primary-600 transition-colors">VidhiLikhit</span>
+                                <span className="text-[9px] uppercase font-bold tracking-[0.3em] text-primary-600 mt-0.5">Matrimony</span>
                             </div>
                         </motion.button>
 
                         {/* Desktop Navigation */}
                         <div className="hidden lg:flex items-center gap-8">
                             <nav className="flex items-center gap-6 text-[13px] font-bold text-slate-600 uppercase tracking-wider">
-                                <button onClick={() => navigate('/about-us')} className="hover:text-[#9A031E] transition-colors">About</button>
-                                <button onClick={() => navigate('/contact-us')} className="hover:text-[#9A031E] transition-colors">Contact</button>
-                                <button onClick={() => navigate('/help-faq')} className="hover:text-[#9A031E] transition-colors">FAQ</button>
+                                <button onClick={() => navigate('/about-us')} className="hover:text-primary-600 transition-colors">About</button>
+                                <button onClick={() => navigate('/contact-us')} className="hover:text-primary-600 transition-colors">Contact</button>
+                                <button onClick={() => navigate('/help-faq')} className="hover:text-primary-600 transition-colors">FAQ</button>
                             </nav>
 
                             <div className="w-px h-6 bg-slate-200"></div>
 
-                            {!user?.isAdmin && user?.subscriptionStatus === 'active' && (
+                            {isAuthenticated && !user?.isAdmin && (
                                 <div className="flex items-center px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold shadow-sm">
-                                    <Star className="w-3.5 h-3.5 mr-1.5 fill-amber-500 text-amber-500" /> {user.remainingViews} Unlocks
+                                    <Star className="w-3.5 h-3.5 mr-1.5 fill-amber-500 text-amber-500" /> {user?.remainingViews || 0} Unlocks
                                 </div>
                             )}
 
@@ -411,7 +413,7 @@ const Home = () => {
                                 <div className="flex items-center gap-3">
                                     <button
                                         onClick={() => navigate('/unlocked-profiles')}
-                                        className="flex items-center gap-2 p-2.5 rounded-full bg-slate-50 hover:bg-[#9A031E] text-slate-600 hover:text-white transition-all shadow-sm border border-slate-100 group"
+                                        className="flex items-center gap-2 p-2.5 rounded-full bg-slate-50 hover:bg-primary-600 text-slate-600 hover:text-white transition-all shadow-sm border border-slate-100 group"
                                         title="Unlocked Profiles"
                                     >
                                         <LockOpen className="w-4 h-4 group-hover:scale-110 transition-transform" />
@@ -419,28 +421,28 @@ const Home = () => {
 
                                     <button
                                         onClick={() => navigate(hasProfile ? '/profile/me' : '/create-profile')}
-                                        className="flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-full border border-slate-200 bg-white hover:border-[#9A031E] hover:shadow-md transition-all"
+                                        className="flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-full border border-slate-200 bg-white hover:border-primary-600 hover:shadow-md transition-all"
                                     >
                                         {user?.photoUrl ? (
                                             <img src={user.photoUrl} alt="User" className="w-8 h-8 rounded-full object-cover shadow-sm" />
                                         ) : (
-                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#9A031E] to-[#f05d23] flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-600 to-[#f05d23] flex items-center justify-center text-white font-bold text-sm shadow-inner">
                                                 {(user?.firstName || 'U')[0]}
                                             </div>
                                         )}
                                         <span className="font-bold text-sm text-slate-700">{user?.firstName || 'Dashboard'}</span>
                                     </button>
 
-                                    <button onClick={handleLogout} className="p-2.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                                    <button onClick={() => setShowLogoutModal(true)} className="p-2.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
                                         <LogOut className="w-5 h-5" />
                                     </button>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-4">
-                                    <button onClick={() => navigate('/login')} className="font-bold text-sm text-slate-600 hover:text-[#9A031E] uppercase tracking-wider">
+                                    <button onClick={() => navigate('/login')} className="font-bold text-sm text-white bg-primary-600 hover:bg-primary-700 px-6 py-2.5 rounded-full transition-colors uppercase tracking-wider shadow-sm">
                                         Login
                                     </button>
-                                    <button onClick={() => navigate('/register')} className="px-7 py-3 rounded-full bg-[#9A031E] text-white font-bold text-sm uppercase tracking-wider hover:bg-[#7a0218] shadow-[0_8px_20px_rgba(154,3,30,0.3)] hover:-translate-y-0.5 transition-all">
+                                    <button onClick={() => navigate('/register')} className="px-7 py-3 rounded-full bg-primary-600 text-white font-bold text-sm uppercase tracking-wider hover:bg-primary-700 shadow-[0_8px_20px_rgba(234,88,12,0.3)] hover:-translate-y-0.5 transition-all">
                                         Register Free
                                     </button>
                                 </div>
@@ -454,7 +456,7 @@ const Home = () => {
                                     {user?.photoUrl ? (
                                         <img src={user.photoUrl} alt="User" className="w-8 h-8 rounded-full object-cover" />
                                     ) : (
-                                        <div className="w-8 h-8 rounded-full bg-[#9A031E] flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                                        <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-sm shadow-inner">
                                             {(user?.firstName || 'U')[0]}
                                         </div>
                                     )}
@@ -483,14 +485,14 @@ const Home = () => {
 
                                 {isAuthenticated ? (
                                     <>
-                                        {user?.isAdmin && <button onClick={() => navigate('/admin/dashboard')} className="block w-full text-left font-bold text-[#9A031E] py-2">Admin Console</button>}
+                                        {user?.isAdmin && <button onClick={() => navigate('/admin/dashboard')} className="block w-full text-left font-bold text-primary-600 py-2">Admin Console</button>}
                                         <button onClick={() => navigate('/unlocked-profiles')} className="block w-full text-left font-bold text-slate-600 py-2">Unlocked Profiles</button>
-                                        <button onClick={handleLogout} className="block w-full text-left font-bold text-rose-600 py-2">Log Out</button>
+                                        <button onClick={() => setShowLogoutModal(true)} className="block w-full text-left font-bold text-rose-600 py-2">Log Out</button>
                                     </>
                                 ) : (
                                     <div className="flex flex-col gap-3 pt-2">
-                                        <button onClick={() => navigate('/login')} className="w-full py-3 rounded-xl border-2 border-[#9A031E] text-[#9A031E] font-bold uppercase text-sm">Login</button>
-                                        <button onClick={() => navigate('/register')} className="w-full py-3 rounded-xl bg-[#9A031E] text-white font-bold uppercase text-sm">Register Free</button>
+                                        <button onClick={() => navigate('/login')} className="w-full py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold uppercase text-sm transition-colors">Login</button>
+                                        <button onClick={() => navigate('/register')} className="w-full py-3 rounded-xl border-2 border-primary-600 text-primary-600 font-bold uppercase text-sm hover:bg-orange-50 transition-colors">Register Free</button>
                                     </div>
                                 )}
                             </div>
@@ -499,52 +501,94 @@ const Home = () => {
                 </AnimatePresence>
             </header>
 
+            {showLogoutModal && (
+                <div className="fixed inset-0 z-[100] bg-black/50 flex flex-col items-center justify-start pt-10 animate-in fade-in duration-200" onClick={() => setShowLogoutModal(false)}>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 w-auto max-w-2xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-6" onClick={(e) => e.stopPropagation()}>
+                        <div className="w-12 h-12 shrink-0 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center">
+                            <LogOut className="w-6 h-6 text-rose-500" />
+                        </div>
+
+                        <div className="flex-1 min-w-[300px]">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                                Confirm Logout
+                            </h2>
+                            <p className="text-sm text-slate-600 dark:text-slate-300">
+                                Are you sure you want to log out of your account?
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3 shrink-0">
+                            <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cancel</button>
+                            <button onClick={handleLogout} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors shadow-md shadow-rose-500/20">Log Out</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* 1. ── MAIN HERO SECTION ── */}
             <section className="relative bg-slate-900 min-h-[100vh] flex items-center overflow-hidden pt-20">
-                {/* Stunning High-Quality Background Image */}
-                <div className="absolute inset-0 z-0">
-                    <motion.img
-                        initial={{ scale: 1.1, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 0.6 }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                        src={HeroBgImg}
-                        alt="Beautiful Traditional Hindu Wedding Ritual"
-                        className="w-full h-full object-cover object-[center_35%]"
-                    />
+                {/* Stunning Auto-Sliding Background Images */}
+                <div className="absolute inset-0 z-0 h-full w-full">
+                    <Swiper
+                        modules={[Autoplay, EffectFade]}
+                        effect="fade"
+                        fadeEffect={{ crossFade: true }}
+                        speed={2000}
+                        autoplay={{ delay: 4000, disableOnInteraction: false }}
+                        loop={true}
+                        allowTouchMove={false}
+                        className="w-full h-full"
+                    >
+                        {[
+                            '/assets/hero/hero_background_1_1772572844785.png',
+                            '/assets/hero/vidhi_hero_1_1772573568582.png',
+                            '/assets/hero/vidhi_hero_3_1772573596985.png',
+                            '/assets/hero/wedding_bg_1_1772574128889.png',
+                            '/assets/hero/hero_background_2_1772572866107.png'
+                        ].map((src, i) => (
+                            <SwiperSlide key={i} className="w-full h-full">
+                                <img
+                                    src={src}
+                                    alt="Traditional Hindu Wedding"
+                                    className="w-full h-full object-cover object-[center_35%]"
+                                />
+                            </SwiperSlide>
+                        ))}
+                    </Swiper>
                     {/* Multi-layered elegant gradient overlays */}
                     <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent mix-blend-multiply" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90" />
                 </div>
 
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20">
+                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-20 pb-40 lg:pb-20">
                     <motion.div
                         initial="hidden" animate="visible" variants={staggerContainer}
-                        className="max-w-2xl"
+                        className="max-w-2xl text-shadow-lg"
                     >
-                        <motion.div variants={fadeInUp} className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase tracking-[0.2em] shadow-2xl mb-8">
-                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        <motion.div variants={fadeInUp} className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary-600/90 backdrop-blur-md border border-primary-600 text-white text-xs font-black uppercase tracking-[0.2em] shadow-2xl mb-8">
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
                             Premium Matrimony For Brahmin & Lingayat
                         </motion.div>
 
-                        <motion.h1 variants={fadeInUp} className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold leading-[1.1] text-white mb-6 drop-shadow-xl">
+                        <motion.h1 variants={fadeInUp} className="text-5xl sm:text-6xl lg:text-7xl font-serif font-extrabold leading-[1.1] text-white mb-6 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
                             A Bright Ray <br /> Of Hope.
                         </motion.h1>
 
-                        <motion.p variants={fadeInUp} className="text-2xl font-serif italic text-amber-400 mb-8 border-l-4 border-amber-500 pl-6 drop-shadow-lg">
+                        <motion.p variants={fadeInUp} className="text-2xl font-serif italic text-amber-300 mb-8 border-l-4 border-amber-400 pl-6 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-bold">
                             Built on trust, tradition, and love.
                         </motion.p>
 
-                        <motion.p variants={fadeInUp} className="text-lg text-slate-300 leading-relaxed max-w-xl font-medium mb-12">
+                        <motion.p variants={fadeInUp} className="text-lg text-white leading-relaxed max-w-xl font-bold mb-12 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                             Finding your perfect life partner starts here. We bring traditional matchmaking into the modern world—secure, personalized, and effortless. Step into a world of genuine connections.
                         </motion.p>
 
                         <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row flex-wrap gap-5">
-                            <button onClick={() => navigate(isAuthenticated ? (hasProfile ? '/profiles' : '/create-profile') : '/register')} className="group px-10 py-4 rounded-full bg-gradient-to-r from-[#9A031E] to-[#b30826] text-white font-bold uppercase tracking-wider text-sm shadow-[0_10px_30px_rgba(154,3,30,0.5)] hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+                            <button onClick={() => navigate(isAuthenticated ? (hasProfile ? '/profiles' : '/create-profile') : '/register')} className="group px-10 py-4 rounded-full bg-gradient-to-r from-primary-500 to-primary-700 text-white font-bold uppercase tracking-wider text-sm shadow-[0_10px_30px_rgba(234,88,12,0.5)] hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
                                 {isAuthenticated ? 'Browse Matches' : 'Create Your Profile Free'}
                                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </button>
                             {!isAuthenticated && (
-                                <button onClick={() => navigate('/login')} className="px-10 py-4 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white font-bold uppercase tracking-wider text-sm transition-all flex items-center justify-center gap-3">
+                                <button onClick={() => navigate('/login')} className="px-10 py-4 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold uppercase tracking-wider text-sm shadow-[0_10px_30px_rgba(234,88,12,0.3)] transition-all flex items-center justify-center gap-3">
                                     <LogIn className="w-5 h-5" /> Login
                                 </button>
                             )}
@@ -570,7 +614,7 @@ const Home = () => {
                 {/* Scroll Indicator */}
                 <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2, duration: 1 }}
-                    className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/50"
+                    className="absolute bottom-10 right-6 sm:right-12 md:right-24 flex flex-col items-center gap-2 text-white/50"
                 >
                     <span className="text-[10px] uppercase font-bold tracking-widest">Scroll to Explore</span>
                     <div className="w-px h-10 bg-gradient-to-b from-white/50 to-transparent"></div>
@@ -581,7 +625,7 @@ const Home = () => {
             <SuitableMatchesGrid onViewMore={() => navigate('/profiles')} />
 
             {/* 3. ── DOWNLOAD PDF BANNER ── */}
-            <section className="py-24 bg-gradient-to-br from-slate-900 to-[#9A031E] text-white relative overflow-hidden">
+            <section className="py-24 bg-gradient-to-br from-slate-900 to-primary-600 text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] opacity-10 mix-blend-overlay object-cover"></div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -604,9 +648,9 @@ const Home = () => {
                         <motion.div variants={scaleIn} className="flex-none w-full md:w-auto">
                             <button
                                 onClick={() => setIsDownloadModalOpen(true)}
-                                className="w-full md:w-auto flex items-center justify-center gap-4 px-10 py-6 rounded-2xl font-bold text-[#9A031E] bg-white hover:bg-slate-50 transition-all shadow-[0_10px_40px_rgba(0,0,0,0.3)] hover:-translate-y-2 text-lg uppercase tracking-wider group"
+                                className="w-full md:w-auto flex items-center justify-center gap-4 px-10 py-6 rounded-2xl font-bold text-primary-700 bg-white hover:bg-slate-50 transition-all shadow-[0_10px_40px_rgba(0,0,0,0.3)] hover:-translate-y-2 text-lg uppercase tracking-wider group"
                             >
-                                <div className="bg-red-50 p-3 rounded-full group-hover:bg-[#9A031E] group-hover:text-white transition-colors">
+                                <div className="bg-orange-50 p-3 rounded-full group-hover:bg-primary-600 group-hover:text-white transition-colors">
                                     <FileDown className="w-6 h-6" />
                                 </div>
                                 Access Biodata PDFs
@@ -646,8 +690,8 @@ const Home = () => {
                             { no: "04", title: "Connect", desc: "Express interest securely and initiate communication seamlessly.", icon: Heart }
                         ].map((step, idx) => (
                             <motion.div key={idx} variants={fadeInUp} className="relative z-10 flex flex-col items-center group">
-                                <div className="w-24 h-24 bg-white rounded-full flex justify-center items-center mb-8 shadow-xl border-4 border-slate-50 group-hover:border-[#9A031E] transition-colors relative">
-                                    <step.icon className="w-10 h-10 text-slate-400 group-hover:text-[#9A031E] transition-colors" />
+                                <div className="w-24 h-24 bg-white rounded-full flex justify-center items-center mb-8 shadow-xl border-4 border-slate-50 group-hover:border-primary-600 transition-colors relative">
+                                    <step.icon className="w-10 h-10 text-slate-400 group-hover:text-primary-600 transition-colors" />
                                     <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-sm font-bold flex items-center justify-center border-4 border-slate-50 shadow-md">
                                         {step.no}
                                     </div>
@@ -671,7 +715,7 @@ const Home = () => {
                         className="text-center mb-20 max-w-4xl mx-auto"
                     >
                         <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 font-serif mb-6">Why Choose Us</h2>
-                        <div className="w-24 h-1 bg-[#9A031E] mx-auto mb-8 rounded-full"></div>
+                        <div className="w-24 h-1 bg-primary-600 mx-auto mb-8 rounded-full"></div>
                         <p className="text-xl text-slate-600 leading-relaxed font-medium">
                             The most trusted and premium matrimony service based in Karnataka, building families on authenticity, privacy, and deep community values.
                         </p>
@@ -681,10 +725,10 @@ const Home = () => {
                         initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer}
                         className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto"
                     >
-                        <motion.div variants={fadeInUp} className="group bg-white p-12 rounded-3xl border border-slate-100 shadow-[0_10px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(154,3,30,0.1)] transition-all duration-500 hover:-translate-y-2 relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-2 bg-[#9A031E] transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
-                            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-8 group-hover:rotate-6 transition-transform">
-                                <Fingerprint className="w-8 h-8 text-[#9A031E]" />
+                        <motion.div variants={fadeInUp} className="group bg-white p-12 rounded-3xl border border-slate-100 shadow-[0_10px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(234,88,12,0.1)] transition-all duration-500 hover:-translate-y-2 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-primary-600 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                            <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mb-8 group-hover:rotate-6 transition-transform">
+                                <Fingerprint className="w-8 h-8 text-primary-600" />
                             </div>
                             <h3 className="text-2xl font-bold font-serif text-slate-900 mb-4">100% Verified Profiles</h3>
                             <p className="text-slate-600 leading-relaxed text-lg">
@@ -770,7 +814,6 @@ const Home = () => {
                             <ul className="space-y-4 text-sm font-medium text-white">
                                 <li><button onClick={() => navigate('/about-us')} className="hover:text-orange-400 transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3 text-orange-500" /> About Us</button></li>
                                 <li><button onClick={() => navigate('/contact-us')} className="hover:text-orange-400 transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3 text-orange-500" /> Contact Us</button></li>
-                                <li><a href="#" className="hover:text-orange-400 transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3 text-orange-500" /> Submit Feedback</a></li>
                             </ul>
                         </div>
 
@@ -782,7 +825,7 @@ const Home = () => {
                             <ul className="space-y-4 text-sm font-medium text-white">
                                 <li><button onClick={() => navigate('/help-faq')} className="hover:text-amber-400 transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3 text-amber-500" /> Help / FAQs</button></li>
                                 <li><button onClick={() => navigate('/privacy-policy')} className="hover:text-amber-400 transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3 text-amber-500" /> Privacy Policy</button></li>
-                                <li><a href="#" className="hover:text-amber-400 transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3 text-amber-500" /> Terms of Service</a></li>
+                                <li><button onClick={() => navigate('/terms-of-service')} className="hover:text-amber-400 transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3 text-amber-500" /> Terms of Service</button></li>
                             </ul>
                         </div>
                     </div>

@@ -25,23 +25,19 @@ const enrichUserWithProfile = async (user, profile) => {
     const subscription = await Subscription.findOne({ userId: user._id });
 
     let photoUrl = null;
-    let firstName = null;
-    let lastName = null;
 
     if (profile) {
         photoUrl = await getPrimaryPhoto(profile);
-        firstName = profile.firstName;
-        lastName = profile.lastName;
     }
 
     return {
         id: user._id,
-        username: user.username,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
         isVerified: user.isVerified,
         isAdmin,
         hasProfile: !!profile,
-        firstName,
         photoUrl,
         remainingViews: subscription ? subscription.remainingViews : 0,
         subscriptionStatus: subscription ? subscription.status : 'none',
@@ -55,10 +51,10 @@ const enrichUserWithProfile = async (user, profile) => {
  */
 const register = async (req, res, next) => {
     try {
-        const { username, email, password, confirmPassword } = req.body;
+        const { firstName, lastName, email, password, confirmPassword } = req.body;
 
         // Validation
-        if (!username || !email || !password || !confirmPassword) {
+        if (!firstName || !lastName || !email || !password || !confirmPassword) {
             return res.status(400).json({
                 success: false,
                 message: 'Please provide all required fields'
@@ -80,14 +76,12 @@ const register = async (req, res, next) => {
         }
 
         // Check if user already exists
-        const existingUser = await User.findOne({
-            $or: [{ email }, { username }]
-        });
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'User with this email or username already exists'
+                message: 'User with this email already exists'
             });
         }
 
@@ -107,7 +101,7 @@ const register = async (req, res, next) => {
         // User will be created in verifyOTP after OTP validation.
 
         // Send OTP email
-        await sendRegistrationOTP(email, username, otpCode);
+        await sendRegistrationOTP(email, firstName, lastName, otpCode);
 
         res.status(201).json({
             success: true,
@@ -130,9 +124,9 @@ const register = async (req, res, next) => {
  */
 const verifyOTP = async (req, res, next) => {
     try {
-        const { username, email, password, confirmPassword, otp } = req.body;
+        const { firstName, lastName, email, password, confirmPassword, otp } = req.body;
 
-        if (!username || !email || !password || !confirmPassword || !otp) {
+        if (!firstName || !lastName || !email || !password || !confirmPassword || !otp) {
             return res.status(400).json({
                 success: false,
                 message: 'Please provide all required fields and OTP'
@@ -153,15 +147,13 @@ const verifyOTP = async (req, res, next) => {
             });
         }
 
-        // Re-check if user already exists (in case someone else registered the username/email in the meantime)
-        const existingUser = await User.findOne({
-            $or: [{ email }, { username }]
-        });
+        // Re-check if user already exists (in case someone else registered the email in the meantime)
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'User with this email or username already exists'
+                message: 'User with this email already exists'
             });
         }
 
@@ -194,7 +186,8 @@ const verifyOTP = async (req, res, next) => {
 
         // Create the user now that OTP is verified
         const user = await User.create({
-            username,
+            firstName,
+            lastName,
             email,
             hashedPassword: password,
             isVerified: true
@@ -230,12 +223,12 @@ const verifyOTP = async (req, res, next) => {
  */
 const resendOTP = async (req, res, next) => {
     try {
-        const { email, username } = req.body;
+        const { email, firstName, lastName } = req.body;
 
-        if (!email || !username) {
+        if (!email || !firstName || !lastName) {
             return res.status(400).json({
                 success: false,
-                message: 'Please provide email and username'
+                message: 'Please provide email, first name, and last name'
             });
         }
 
@@ -261,7 +254,7 @@ const resendOTP = async (req, res, next) => {
         });
 
         // Send OTP email
-        await sendRegistrationOTP(email, username, otpCode);
+        await sendRegistrationOTP(email, firstName, lastName, otpCode);
 
         res.json({
             success: true,
