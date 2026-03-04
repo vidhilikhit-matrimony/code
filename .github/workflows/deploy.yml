@@ -18,7 +18,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /var/www/vidhilikhit/code
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
 
             cd backend-nodejs
             npm install
