@@ -34,3 +34,6 @@ coverage/
 # IDE
 .vscode/
 .idea/
+
+**/lint_output.txt
+**/build_output.txt
