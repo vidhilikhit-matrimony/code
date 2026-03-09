@@ -7,6 +7,7 @@ import {
     Users, Phone, FileText, Camera, ChevronRight, ChevronLeft, Check, Loader2, X
 } from 'lucide-react';
 import { createProfile, getMyProfile } from '../services/profileService';
+import { useConfirm } from '../components/ConfirmContext';
 
 import CustomSelect from '../components/common/CustomSelect';
 import { updateUser } from '../redux/slices/authSlice';
@@ -201,23 +202,19 @@ const StepProgress = ({ currentStep }) => (
             const isCompleted = currentStep > step.id;
             return (
                 <React.Fragment key={step.id}>
-                    <div className="flex flex-col items-center gap-1.5">
-                        <div className={`
+                    <div className={`
                             w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
                             ${isCompleted ? 'bg-green-500 text-white' :
-                                isActive ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' :
-                                    'bg-slate-200 dark:bg-slate-700 text-slate-400'}
+                            isActive ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' :
+                                'bg-slate-200 dark:bg-slate-700 text-slate-400'}
                         `}>
-                            {isCompleted ? <Check className="w-5 h-5" /> : <StepIcon className="w-5 h-5" />}
-                        </div>
-                        <span className={`text-xs font-medium hidden sm:block ${isActive ? 'text-primary-600' : 'text-slate-400'
-                            }`}>
-                            {step.title}
-                        </span>
+                        {isCompleted ? <Check className="w-5 h-5" /> : <StepIcon className="w-5 h-5" />}
                     </div>
+                    <span className={`text-xs font-medium hidden sm:block ${isActive ? 'text-primary-600' : 'text-slate-400'}`}>
+                        {step.title}
+                    </span>
                     {i < STEPS.length - 1 && (
-                        <div className={`flex-1 h-0.5 mx-2 rounded transition-colors ${currentStep > step.id ? 'bg-green-500' : 'bg-slate-200 dark:bg-slate-700'
-                            }`} />
+                        <div className={`flex-1 h-0.5 mx-2 rounded transition-colors ${currentStep > step.id ? 'bg-green-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
                     )}
                 </React.Fragment>
             );
@@ -234,6 +231,7 @@ const CreateProfile = () => {
 
     const dispatch = useDispatch();
     const { user, sessionSeed } = useSelector((state) => state.auth);
+    const confirm = useConfirm();
     const [step, setStep] = useState(1);
 
     // Inject Redux user name into the initial form state
@@ -875,17 +873,23 @@ const CreateProfile = () => {
                     {/* Navigation Buttons */}
                     <div className="flex justify-between mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
                         <button
-                            onClick={() => {
+                            onClick={async () => {
                                 if (hasUnsavedChanges) {
-                                    if (window.confirm("You have unsaved changes. Are you sure you want to discard them?")) {
+                                    const discard = await confirm({
+                                        message: "You have unsaved changes. Are you sure you want to discard them?",
+                                        type: "warning"
+                                    });
+                                    if (discard) {
                                         setHasUnsavedChanges(false);
-                                        navigate(-1);
+                                        navigate('/');
                                     }
                                 } else {
                                     if (step === 1) {
-                                        if (window.confirm("Are you sure you want to cancel the setup without saving?")) {
-                                            navigate(-1);
-                                        }
+                                        const cancel = await confirm({
+                                            message: "Are you sure you want to cancel the setup without saving?",
+                                            type: "warning"
+                                        });
+                                        if (cancel) navigate('/');
                                     } else {
                                         prevStep();
                                     }

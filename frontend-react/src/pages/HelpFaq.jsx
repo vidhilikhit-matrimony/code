@@ -135,47 +135,6 @@ export default function HelpFAQ() {
                     </div>
                 </section>
 
-                {/* Profile Unlock & Tokens */}
-                <section className="mb-10">
-                    <div className="bg-white rounded-xl p-8 lg:p-10 border border-[#E8E2D9] premium-shadow border-l-8 border-l-gold text-left">
-                        <h2 className="text-2xl font-bold font-serif text-[#2A2321] mb-8 border-b border-[#E8E2D9] pb-4">
-                            Profile Unlock & Access Tokens
-                        </h2>
-                        <div className="space-y-8">
-                            <div>
-                                <p className="text-[#2A2321] font-bold mb-2 text-lg">
-                                    8. What is an Access Token?
-                                </p>
-                                <p className="text-[#5A524D] leading-relaxed">
-                                    An Access Token is a unique code that allows you to unlock and
-                                    view full details of selected profiles.
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-[#2A2321] font-bold mb-2 text-lg">
-                                    9. How do I use my Access Token?
-                                </p>
-                                <p className="text-[#5A524D] leading-relaxed">
-                                    When you visit a profile, click the "Unlock Profile" button.
-                                    Enter your Access Token, and the full profile details will be
-                                    displayed.
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-[#2A2321] font-bold mb-2 text-lg">
-                                    10. Can I view unlimited profiles with one token?
-                                </p>
-                                <p className="text-[#5A524D] leading-relaxed">
-                                    No. Your plan allows you to view 35 profiles in total. Each time
-                                    you unlock a profile, your remaining count decreases.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
                 {/* Communication & Privacy */}
                 <section className="mb-10">
                     <div className="bg-white rounded-xl p-8 lg:p-10 border border-[#E8E2D9] premium-shadow border-l-8 border-l-primary-600 text-left">
@@ -185,10 +144,10 @@ export default function HelpFAQ() {
                         <div className="space-y-8">
                             <div>
                                 <p className="text-[#2A2321] font-bold mb-2 text-lg">
-                                    11. Can I contact a profile directly?
+                                    8. Can I contact a profile directly?
                                 </p>
                                 <p className="text-[#5A524D] leading-relaxed">
-                                    Yes. Once you unlock a profile using your Access Token, you'll
+                                    Yes. Once you unlock a profile as a Premium Member, you'll
                                     be able to view the person's full profile details, including
                                     contact information.
                                 </p>
@@ -196,7 +155,7 @@ export default function HelpFAQ() {
 
                             <div>
                                 <p className="text-[#2A2321] font-bold mb-2 text-lg">
-                                    12. How is my data protected?
+                                    9. How is my data protected?
                                 </p>
                                 <p className="text-[#5A524D] leading-relaxed">
                                     Your personal information is secure. Contact details are only

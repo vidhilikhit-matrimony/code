@@ -503,23 +503,23 @@ const Home = () => {
 
             {showLogoutModal && (
                 <div className="fixed inset-0 z-[100] bg-black/50 flex flex-col items-center justify-start pt-10 animate-in fade-in duration-200" onClick={() => setShowLogoutModal(false)}>
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 w-auto max-w-2xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-6" onClick={(e) => e.stopPropagation()}>
-                        <div className="w-12 h-12 shrink-0 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center">
-                            <LogOut className="w-6 h-6 text-rose-500" />
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 w-11/12 max-w-md shadow-xl border border-slate-200 dark:border-slate-700 mx-auto mt-20 sm:mt-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-6">
+                            <div className="w-12 h-12 shrink-0 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center">
+                                <LogOut className="w-6 h-6 text-rose-500" />
+                            </div>
+                            <div className="flex-1 text-center sm:text-left">
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                                    Confirm Logout
+                                </h2>
+                                <p className="text-sm text-slate-600 dark:text-slate-300">
+                                    Are you sure you want to log out of your account?
+                                </p>
+                            </div>
                         </div>
-
-                        <div className="flex-1 min-w-[300px]">
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-                                Confirm Logout
-                            </h2>
-                            <p className="text-sm text-slate-600 dark:text-slate-300">
-                                Are you sure you want to log out of your account?
-                            </p>
-                        </div>
-
-                        <div className="flex gap-3 shrink-0">
-                            <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cancel</button>
-                            <button onClick={handleLogout} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors shadow-md shadow-rose-500/20">Log Out</button>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-end w-full">
+                            <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 w-full sm:w-auto rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cancel</button>
+                            <button onClick={handleLogout} className="px-4 py-2 w-full sm:w-auto rounded-xl text-sm font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors shadow-md shadow-rose-500/20">Log Out</button>
                         </div>
                     </div>
                 </div>

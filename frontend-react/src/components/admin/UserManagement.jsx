@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Search, Lock, Unlock, Loader2, ChevronLeft, ChevronRight, Trash2, UserPlus, X } from 'lucide-react';
+import { useConfirm } from '../ConfirmContext';
 import api from '../../services/api';
 import CustomSelect from '../common/CustomSelect';
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const confirm = useConfirm();
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
@@ -65,10 +68,12 @@ const UserManagement = () => {
         }
     };
 
-    const handleToggleStatus = async (userId, currentStatus) => {
-        if (!window.confirm(`Are you sure you want to ${currentStatus ? 'deactivate' : 'activate'} this user?`)) {
-            return;
-        }
+    const handleStatusToggle = async (userId, currentStatus) => {
+        const confirmToggle = await confirm({
+            message: `Are you sure you want to ${currentStatus ? 'deactivate' : 'activate'} this user?`,
+            type: currentStatus ? 'warning' : 'info'
+        });
+        if (!confirmToggle) return;
 
         setActionLoading(userId);
         try {
@@ -91,9 +96,12 @@ const UserManagement = () => {
     };
 
     const handleDeleteUser = async (user) => {
-        if (!window.confirm(`Are you absolutely sure you want to permanently delete the user "${user.firstName} ${user.lastName}"? This action cannot be undone and will delete all their profiles and data.`)) {
-            return;
-        }
+        const confirmDelete = await confirm({
+            message: `Are you absolutely sure you want to permanently delete the user "${user.firstName} ${user.lastName}"?\n\nThis action cannot be undone and will delete all their profiles and data.`,
+            type: 'danger'
+        });
+
+        if (!confirmDelete) return;
 
         setActionLoading(user._id);
         try {

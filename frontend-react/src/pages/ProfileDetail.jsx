@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { logout, updateUser } from '../redux/slices/authSlice';
 import { getProfileById, unlockProfile, deleteProfile } from '../services/profileService';
+import { useConfirm } from '../components/ConfirmContext';
 
 
 // ─── Detail Row Component ───────────────────────────────────────
@@ -77,9 +78,10 @@ const ProfileDetail = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+    const confirm = useConfirm();
 
     const handleUnlock = async () => {
-        const confirmUnlock = window.confirm("Are you sure you want to unlock this profile? This will consume 1 view from your subscription.");
+        const confirmUnlock = await confirm("Are you sure you want to unlock this profile? This will consume 1 view from your subscription.");
         if (!confirmUnlock) return;
 
         try {
@@ -109,7 +111,11 @@ const ProfileDetail = () => {
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('Are you sure you want to delete your profile? This action will deactivate your account.')) {
+        const confirmDelete = await confirm({
+            message: 'Are you sure you want to delete your profile? This action will deactivate your account.',
+            type: 'danger'
+        });
+        if (!confirmDelete) {
             return;
         }
 

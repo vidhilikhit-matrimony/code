@@ -738,7 +738,7 @@ const getProfileById = async (req, res, next) => {
 
         // Authenticated user: check if they explicitly unlocked this profile
         if (currentUserId) {
-            const subscription = await Subscription.findOne({ userId: currentUserId });
+            const subscription = await Subscription.findOne({ userId: currentUserId }).sort({ createdAt: -1 });
             const isUnlocked = subscription?.unlockedProfileIds?.some(
                 id => id.toString() === req.params.id
             );
@@ -780,7 +780,7 @@ const unlockProfile = async (req, res, next) => {
         }
 
         // 2. Get user's subscription
-        const subscription = await Subscription.findOne({ userId });
+        const subscription = await Subscription.findOne({ userId }).sort({ createdAt: -1 });
 
         if (!subscription || !subscription.isValid()) {
             return res.status(403).json({

@@ -188,7 +188,7 @@ const verifyPayment = async (req, res, next) => {
             // Note: Currently we'll create a new subscription or extend existing?
             // Assuming simplified logic: Create new subscription or add views to existing
 
-            let subscription = await Subscription.findOne({ userId: payment.userId });
+            let subscription = await Subscription.findOne({ userId: payment.userId }).sort({ createdAt: -1 });
 
             const now = new Date();
             const validTo = new Date();
@@ -200,7 +200,6 @@ const verifyPayment = async (req, res, next) => {
                 subscription.maxViews += finalViews;
                 if (subscription.validTo < now) {
                     subscription.validTo = validTo; // Extend validity if expired
-                    subscription.status = 'active';
                 } else {
                     // Extend validity by 3 months from current expiry? or just views?
                     // Let's extend from current expiry
@@ -208,6 +207,7 @@ const verifyPayment = async (req, res, next) => {
                     currentExpiry.setMonth(currentExpiry.getMonth() + 3);
                     subscription.validTo = currentExpiry;
                 }
+                subscription.status = 'active';
                 await subscription.save();
             } else {
                 // Create new
@@ -224,11 +224,9 @@ const verifyPayment = async (req, res, next) => {
             }
 
             // --- Send Notification to User ---
-            const user = await User.findById(payment.userId);
-            if (user) {
-                user.pendingNotification = `Admin approved your subscription. You received ${finalViews} profile view counts and can now unlock profiles to get contact details.`;
-                await user.save();
-            }
+            await User.findByIdAndUpdate(payment.userId, {
+                pendingNotification: `Admin approved your subscription. You received ${finalViews} profile view counts and can now unlock profiles to get contact details.`
+            });
 
             return res.json({
                 success: true,

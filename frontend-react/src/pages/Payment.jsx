@@ -231,7 +231,7 @@ const Payment = () => {
                                     <p className="text-lg font-bold text-slate-900 dark:text-white">
                                         Pay ₹{currentPlan.amount}
                                     </p>
-                                    <p className="text-xs text-slate-500 mt-1 font-mono">UPI ID: allagikar007-1@oksbi</p>
+                                    <p className="text-xs text-slate-500 mt-1 font-mono">UPI ID: 40111000380kagb@cnrb</p>
                                 </div>
 
                                 <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-700">

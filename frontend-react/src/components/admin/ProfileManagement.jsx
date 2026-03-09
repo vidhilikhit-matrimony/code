@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle, UserPlus, X, Power } from 'lucide-react';
+import { useConfirm } from '../ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import CustomSelect from '../common/CustomSelect';
@@ -14,6 +15,7 @@ const ProfileManagement = () => {
     const [filterStatus, setFilterStatus] = useState('all');
     const [deleteLoading, setDeleteLoading] = useState(null);
     const [activatingLoading, setActivatingLoading] = useState(null);
+    const confirm = useConfirm();
     const [editingUnlocks, setEditingUnlocks] = useState(null); // { id: profileId, value: number, subId: subscriptionId }
     const [updateLoading, setUpdateLoading] = useState(false);
 
@@ -56,9 +58,12 @@ const ProfileManagement = () => {
     };
 
     const handleDelete = async (profileId) => {
-        if (!window.confirm('Are you sure you want to permanently delete this profile? This action cannot be undone.')) {
-            return;
-        }
+        const confirmDelete = await confirm({
+            message: 'Are you sure you want to permanently delete this profile? This action cannot be undone.',
+            type: 'danger'
+        });
+
+        if (!confirmDelete) return;
 
         setDeleteLoading(profileId);
         try {
@@ -80,10 +85,12 @@ const ProfileManagement = () => {
         const newStatus = !isCurrentlyActive;
         const actionText = newStatus ? 'activate' : 'deactivate (hide)';
 
-        console.log(`Toggling profile status to: ${newStatus}`, profile);
-        if (!window.confirm(`Are you sure you want to ${actionText} this profile?`)) {
-            return;
-        }
+        const confirmToggle = await confirm({
+            message: `Are you sure you want to ${actionText} this profile?`,
+            type: isCurrentlyActive ? 'warning' : 'info'
+        });
+
+        if (!confirmToggle) return;
 
         const userId = profile.userId?._id || profile.userId;
         console.log("Extracted userId:", userId);
@@ -96,8 +103,8 @@ const ProfileManagement = () => {
         setActivatingLoading(profile._id);
 
         try {
-            console.log(`Making PUT request to /admin/users/${userId}/status with { isActive: ${newStatus} }`);
-            const response = await api.put(`/admin/users/${userId}/status`, { isActive: newStatus });
+            console.log(`Making PUT request to / admin / users / ${userId}/status with { isActive: ${newStatus} }`);
+            const response = await api.put(`/ admin / users / ${userId}/status`, { isActive: newStatus });
             console.log("API Response:", response);
 
             if (response.success) {

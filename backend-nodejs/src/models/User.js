@@ -64,7 +64,20 @@ userSchema.pre('save', async function (next) {
 
 // Method to compare password
 userSchema.methods.comparePassword = async function (candidatePassword) {
-    return await bcrypt.compare(candidatePassword, this.hashedPassword);
+    // 1. Standard check: plain bcrypt (for new users or after password reset)
+    const isMatch = await bcrypt.compare(candidatePassword, this.hashedPassword);
+    if (isMatch) return true;
+
+    const crypto = require('crypto');
+
+    // 2. Fallback for migrated users: old system used SHA-256, then we bcrypt-hashed that
+    const sha256Hash = crypto.createHash('sha256').update(candidatePassword).digest('hex');
+    const isSha256Match = await bcrypt.compare(sha256Hash, this.hashedPassword);
+    if (isSha256Match) return true;
+
+    // 3. Fallback for migrated users: old system used MD5, then we bcrypt-hashed that
+    const md5Hash = crypto.createHash('md5').update(candidatePassword).digest('hex');
+    return await bcrypt.compare(md5Hash, this.hashedPassword);
 };
 
 // Remove password from JSON output

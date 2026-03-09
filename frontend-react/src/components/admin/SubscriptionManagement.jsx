@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Check, X, Loader2, Eye, AlertTriangle } from 'lucide-react';
+import { useConfirm } from '../ConfirmContext';
 import api from '../../services/api';
 
 const SubscriptionManagement = () => {
     const [payments, setPayments] = useState([]);
+    const confirm = useConfirm();
     const [recentPayments, setRecentPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState(null);
@@ -154,8 +156,12 @@ const SubscriptionManagement = () => {
                                             <Check className="w-4 h-4" /> Approve
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                if (window.confirm('Are you sure you want to reject this payment?')) {
+                                            onClick={async () => {
+                                                const rejectConfirmed = await confirm({
+                                                    message: 'Are you sure you want to reject this payment?',
+                                                    type: 'danger'
+                                                });
+                                                if (rejectConfirmed) {
                                                     setVerifyModal({ id: payment._id, reject: true });
                                                 }
                                             }}

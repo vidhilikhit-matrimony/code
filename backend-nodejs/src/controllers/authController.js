@@ -22,7 +22,7 @@ const getPrimaryPhoto = async (profile) => {
 const enrichUserWithProfile = async (user, profile) => {
     const isAdmin = checkIsAdmin(user);
     // Fetch subscription for remaining views
-    const subscription = await Subscription.findOne({ userId: user._id });
+    const subscription = await Subscription.findOne({ userId: user._id }).sort({ createdAt: -1 });
 
     let photoUrl = null;
 
@@ -576,17 +576,10 @@ const refreshToken = async (req, res, next) => {
 const clearNotification = async (req, res, next) => {
     try {
         const userId = req.user._id;
-        const user = await User.findById(userId);
 
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        user.pendingNotification = null;
-        await user.save();
+        await User.findByIdAndUpdate(userId, {
+            pendingNotification: null
+        });
 
         res.json({
             success: true,

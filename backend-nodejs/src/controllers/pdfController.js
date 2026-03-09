@@ -57,7 +57,7 @@ const downloadProfilePdf = async (req, res, next) => {
 
         let isUnlocked = false;
         if (!isOwner && !isAdmin) {
-            const subscription = await Subscription.findOne({ userId: requestingUserId });
+            const subscription = await Subscription.findOne({ userId: requestingUserId }).sort({ createdAt: -1 });
             isUnlocked = subscription &&
                 subscription.unlockedProfileIds &&
                 subscription.unlockedProfileIds.some(pid => pid.toString() === id);

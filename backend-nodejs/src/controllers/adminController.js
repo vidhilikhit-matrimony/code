@@ -259,7 +259,7 @@ const getAllProfilesAdmin = async (req, res, next) => {
             profiles.map(async (profile) => {
                 const pObj = profile.toObject();
                 // A profile belongs to a userId, the subscription is associated with that userId
-                const subscription = await Subscription.findOne({ userId: profile.userId._id });
+                const subscription = await Subscription.findOne({ userId: profile.userId._id }).sort({ createdAt: -1 });
                 if (subscription) {
                     pObj.subscriptionId = subscription._id;
                     pObj.unlocksLeft = subscription.remainingViews;

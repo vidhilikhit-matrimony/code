@@ -33,3 +33,6 @@ temp/
 # Build
 dist/
 build/
+
+**/lint_output.txt
+**/build_output.txt
