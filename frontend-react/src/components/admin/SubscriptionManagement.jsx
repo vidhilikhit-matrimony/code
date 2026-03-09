@@ -258,17 +258,17 @@ const SubscriptionManagement = () => {
                                 </label>
                                 <div className="relative">
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="numeric"
                                         value={overrideViews}
                                         onChange={(e) => {
-                                            let val = e.target.value;
+                                            let val = e.target.value.replace(/[^0-9]/g, '');
                                             if (val.length > 3) val = val.slice(0, 3);
-                                            if (parseInt(val) > 999) val = "999";
+                                            if (val !== '' && parseInt(val) > 999) val = "999";
                                             setOverrideViews(val);
                                         }}
                                         className="input pr-16"
-                                        min="1"
-                                        max="999"
+                                        placeholder="e.g. 50"
                                     />
                                     <span className="absolute right-3 top-2.5 text-sm text-slate-400">
                                         views

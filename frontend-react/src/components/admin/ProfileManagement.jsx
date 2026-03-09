@@ -395,10 +395,13 @@ const ProfileManagement = () => {
                                                 {editingUnlocks?.id === profile._id ? (
                                                     <div className="flex items-center gap-2">
                                                         <input
-                                                            type="number"
-                                                            min="0"
+                                                            type="text"
+                                                            inputMode="numeric"
                                                             value={editingUnlocks.value}
-                                                            onChange={(e) => setEditingUnlocks({ ...editingUnlocks, value: e.target.value })}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                                setEditingUnlocks({ ...editingUnlocks, value: val });
+                                                            }}
                                                             className="w-16 px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
                                                         />
                                                         <button

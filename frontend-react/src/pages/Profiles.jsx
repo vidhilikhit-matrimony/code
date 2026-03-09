@@ -495,8 +495,7 @@ const Profiles = () => {
                             ) : (
                                 <button
                                     onClick={() => navigate('/payment')}
-                                    className="hidden md:flex items-center px-4 py-1.5 rounded-full text-xs font-bold
-                                               bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-colors"
+                                    className="hidden md:flex items-center px-4 py-2 rounded-lg text-sm border border-indigo-600 text-indigo-600 font-semibold hover:bg-indigo-50 transition-colors"
                                 >
                                     {user?.subscriptionStatus === 'active' && user?.remainingViews === 0 ? 'Renew Subscription' : 'Buy Subscription'}
                                 </button>
