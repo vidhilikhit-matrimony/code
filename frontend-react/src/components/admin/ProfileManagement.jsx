@@ -491,7 +491,7 @@ const ProfileManagement = () => {
             {totalPages > 1 && (
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-center items-center gap-2">
                     <button
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         disabled={page === 1}
                         className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -501,7 +501,7 @@ const ProfileManagement = () => {
                         Page {page} of {totalPages}
                     </span>
                     <button
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         disabled={page === totalPages}
                         className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >

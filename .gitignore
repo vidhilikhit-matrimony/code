@@ -37,3 +37,4 @@ coverage/
 
 **/lint_output.txt
 **/build_output.txt
+backend-nodejs/scripts/email-log.txt

@@ -277,10 +277,15 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         return pages;
     };
 
+    const handlePageChange = (page) => {
+        onPageChange(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     return (
         <div className="flex items-center justify-center gap-2 mt-8">
             <button
-                onClick={() => onPageChange(currentPage - 1)}
+                onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
                 className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             >
@@ -290,7 +295,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             {getPages().map(page => (
                 <button
                     key={page}
-                    onClick={() => onPageChange(page)}
+                    onClick={() => handlePageChange(page)}
                     className={`w-10 h-10 rounded-lg font-medium transition-all ${page === currentPage
                         ? 'bg-primary-600 text-white shadow-md'
                         : 'border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -301,7 +306,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             ))}
 
             <button
-                onClick={() => onPageChange(currentPage + 1)}
+                onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
                 className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             >
