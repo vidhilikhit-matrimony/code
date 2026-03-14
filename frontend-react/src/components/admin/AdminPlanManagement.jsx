@@ -125,6 +125,9 @@ const AdminPlanManagement = ({ onSuccess }) => {
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Shield className="w-5 h-5 text-primary-500" />
                         Subscription Plans Management
+                        <span className="ml-2 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-700">
+                            {plans.length} {plans.length === 1 ? 'Plan' : 'Plans'}
+                        </span>
                     </h2>
                     <p className="text-slate-500 text-sm mt-1">Create, edit, and configure the pricing plans available to users</p>
                 </div>

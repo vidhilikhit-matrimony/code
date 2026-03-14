@@ -17,6 +17,9 @@ const subscriptionPaymentSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    grantedViews: {
+        type: Number
+    },
     amount: {
         type: Number,
         required: true,

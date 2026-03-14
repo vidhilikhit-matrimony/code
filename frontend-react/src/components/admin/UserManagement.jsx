@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Search, Lock, Unlock, Loader2, ChevronLeft, ChevronRight, Trash2, UserPlus, X } from 'lucide-react';
+import { Search, Lock, Unlock, Loader2, ChevronLeft, ChevronRight, Trash2, UserPlus, X, SortAsc, SortDesc } from 'lucide-react';
 import { useConfirm } from '../ConfirmContext';
 import api from '../../services/api';
 import CustomSelect from '../common/CustomSelect';
@@ -12,6 +12,7 @@ const UserManagement = () => {
     const confirm = useConfirm();
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalRecords, setTotalRecords] = useState(0);
     const [search, setSearch] = useState('');
     const [actionLoading, setActionLoading] = useState(null);
 
@@ -20,9 +21,16 @@ const UserManagement = () => {
     const [createLoading, setCreateLoading] = useState(false);
     const [viewMode, setViewMode] = useState('all');
 
+    // New Filter & Sort States
+    const [sortField, setSortField] = useState('joined');
+    const [sortOrder, setSortOrder] = useState('desc');
+    const [statusFilter, setStatusFilter] = useState(''); // '', 'active', 'inactive'
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
     useEffect(() => {
         fetchUsers();
-    }, [page, search, viewMode]);
+    }, [page, search, viewMode, sortField, sortOrder, statusFilter, startDate, endDate]);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -33,6 +41,12 @@ const UserManagement = () => {
                 ...(search && { search })
             });
 
+            if (sortField) queryParams.append('sortField', sortField);
+            if (sortOrder) queryParams.append('sortOrder', sortOrder);
+            if (statusFilter) queryParams.append('status', statusFilter);
+            if (startDate) queryParams.append('startDate', startDate);
+            if (endDate) queryParams.append('endDate', endDate);
+
             if (viewMode === 'profile-users') queryParams.append('hasProfile', true);
             if (viewMode === 'non-profile-users') queryParams.append('hasProfile', false);
 
@@ -40,6 +54,7 @@ const UserManagement = () => {
             if (response.success) {
                 setUsers(response.data);
                 setTotalPages(response.totalPages);
+                setTotalRecords(response.totalUsers || 0);
             }
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -127,12 +142,32 @@ const UserManagement = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+        setPage(1);
+    };
+
+    const renderSortIcon = (field) => {
+        if (sortField !== field) return null;
+        return sortOrder === 'asc' ? <SortAsc className="w-4 h-4 inline ml-1" /> : <SortDesc className="w-4 h-4 inline ml-1" />;
+    };
+
     return (
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Header / Search */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center justify-between w-full sm:w-auto gap-4">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">User Management</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">User Management</h2>
+                        <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-700">
+                            {totalRecords} {totalRecords === 1 ? 'Record' : 'Records'}
+                        </span>
+                    </div>
                     <div className="hidden sm:flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg ml-4">
                         <button
                             onClick={() => { setViewMode('all'); setPage(1); }}
@@ -189,8 +224,8 @@ const UserManagement = () => {
                 </div>
             </div>
 
-            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-                <div className="relative w-full sm:w-64">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col xl:flex-row gap-4 justify-between">
+                <div className="relative w-full xl:w-64 shrink-0">
                     <input
                         type="text"
                         placeholder="Search users..."
@@ -198,6 +233,41 @@ const UserManagement = () => {
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                     />
+                    <Search className="absolute left-3 top-2.5 w-5 h-5 text-slate-400" />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center xl:justify-end w-full">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">Status:</label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                            className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                        >
+                            <option value="">All</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">Joined Between:</label>
+                        <div className="flex items-center gap-2 w-full">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                                className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                            />
+                            <span className="text-slate-500 dark:text-slate-400">to</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                                className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -206,10 +276,31 @@ const UserManagement = () => {
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                         <tr>
-                            <th className="px-6 py-3 font-semibold">User</th>
+                            <th
+                                className="px-6 py-3 font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                onClick={() => handleSort('name')}
+                            >
+                                <div className="flex items-center">
+                                    User {renderSortIcon('name')}
+                                </div>
+                            </th>
                             <th className="px-6 py-3 font-semibold">Role</th>
-                            <th className="px-6 py-3 font-semibold">Status</th>
-                            <th className="px-6 py-3 font-semibold">Joined</th>
+                            <th
+                                className="px-6 py-3 font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                onClick={() => handleSort('status')}
+                            >
+                                <div className="flex items-center">
+                                    Status {renderSortIcon('status')}
+                                </div>
+                            </th>
+                            <th
+                                className="px-6 py-3 font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                onClick={() => handleSort('joined')}
+                            >
+                                <div className="flex items-center">
+                                    Joined {renderSortIcon('joined')}
+                                </div>
+                            </th>
                             <th className="px-6 py-3 font-semibold text-right">Actions</th>
                         </tr>
                     </thead>
