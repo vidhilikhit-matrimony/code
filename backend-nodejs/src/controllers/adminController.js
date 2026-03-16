@@ -6,33 +6,134 @@ const { User, Profile, Subscription, SubscriptionPayment } = require('../models'
  */
 const getDashboardStats = async (req, res, next) => {
     try {
-        const [
-            totalUsers,
-            totalProfiles,
-            publishedProfiles,
-            pendingSubscriptions,
-            totalRevenueResult
-        ] = await Promise.all([
-            User.countDocuments({}),
-            Profile.countDocuments({}),
-            Profile.countDocuments({ isPublished: true }),
-            SubscriptionPayment.countDocuments({ status: 'pending' }),
-            SubscriptionPayment.aggregate([
-                { $match: { status: 'approved' } },
-                { $group: { _id: null, total: { $sum: '$amount' } } }
-            ])
+        const {
+            registeredUsersRange = 'all',
+            createdProfilesRange = 'all',
+            newSubscriptionsRange = 'all',
+            renewedSubscriptionsRange = 'all',
+            deletedAccountsRange = 'all',
+            subscriptionRevenueRange = 'all',
+            renewalRevenueRange = 'all',
+            totalEarnedRange = 'all'
+        } = req.query;
+
+        const getStartDate = (range) => {
+            if (!range || range === 'all') return null;
+            const date = new Date();
+            date.setHours(0, 0, 0, 0); // Start of day by default
+            if (range === '7') date.setDate(date.getDate() - 7);
+            else if (range === '30') date.setDate(date.getDate() - 30);
+            else if (range === '180') date.setDate(date.getDate() - 180);
+            else if (range === '365') date.setDate(date.getDate() - 365);
+            return date;
+        };
+
+        const REVENUE_START_DATE = new Date('2026-03-11T00:00:00.000Z');
+
+        // 1. Registered Users
+        const regStartDate = getStartDate(registeredUsersRange);
+        const regFilter = regStartDate ? { createdAt: { $gte: regStartDate } } : {};
+        const registeredUsers = await User.countDocuments(regFilter);
+
+        // 2. Created Profiles
+        const proStartDate = getStartDate(createdProfilesRange);
+        const proFilter = proStartDate ? { createdAt: { $gte: proStartDate } } : {};
+        const createdProfiles = await Profile.countDocuments(proFilter);
+
+        // 5. Deleted Accounts/Profiles
+        const delStartDate = getStartDate(deletedAccountsRange);
+        const delFilter = delStartDate ? { isDeleted: true, deletedAt: { $gte: delStartDate } } : { isDeleted: true };
+        const deletedAccounts = await Profile.countDocuments(delFilter);
+
+        let newSubscriptions = 0;
+        let renewedSubscriptions = 0;
+        let subscriptionRevenue = 0;
+        let renewalRevenue = 0;
+        let totalEarned = 0;
+
+        const payments = await SubscriptionPayment.aggregate([
+            { $match: { status: 'approved' } },
+            { $sort: { createdAt: 1 } },
+            {
+                $group: {
+                    _id: '$userId',
+                    payments: {
+                        $push: {
+                            date: '$createdAt',
+                            amount: { $ifNull: ['$amount', 0] }
+                        }
+                    }
+                }
+            }
         ]);
 
-        const totalRevenue = totalRevenueResult.length > 0 ? totalRevenueResult[0].total : 0;
+        const newSubStartDate = getStartDate(newSubscriptionsRange);
+        const renSubStartDate = getStartDate(renewedSubscriptionsRange);
+        const subRevStartDate = getStartDate(subscriptionRevenueRange);
+        const renRevStartDate = getStartDate(renewalRevenueRange);
+        const totEarStartDate = getStartDate(totalEarnedRange);
+
+        payments.forEach(userPayments => {
+            const userHistory = userPayments.payments;
+            if (userHistory.length > 0) {
+                const firstPayment = userHistory[0];
+                const firstDate = new Date(firstPayment.date);
+                const firstAmount = firstPayment.amount || 0;
+
+                // New Subscriptions count
+                if (!newSubStartDate || firstDate >= newSubStartDate) {
+                    newSubscriptions++;
+                }
+
+                // Revenue calculations
+                // Strictly respect March 11, 2026 start date requested by user for counting revenue
+                if (firstDate >= REVENUE_START_DATE) {
+                    // Subscription Revenue
+                    if (!subRevStartDate || firstDate >= subRevStartDate) {
+                        subscriptionRevenue += firstAmount;
+                    }
+                    // Total Earned
+                    if (!totEarStartDate || firstDate >= totEarStartDate) {
+                        totalEarned += firstAmount;
+                    }
+                }
+
+                // Renewals
+                for (let i = 1; i < userHistory.length; i++) {
+                    const renewal = userHistory[i];
+                    const renewalDate = new Date(renewal.date);
+                    const renewalAmount = renewal.amount || 0;
+
+                    // Renewed Subscriptions count
+                    if (!renSubStartDate || renewalDate >= renSubStartDate) {
+                        renewedSubscriptions++;
+                    }
+
+                    if (renewalDate >= REVENUE_START_DATE) {
+                        // Renewal Revenue
+                        if (!renRevStartDate || renewalDate >= renRevStartDate) {
+                            renewalRevenue += renewalAmount;
+                        }
+                        // Total Earned
+                        if (!totEarStartDate || renewalDate >= totEarStartDate) {
+                            totalEarned += renewalAmount;
+                        }
+                    }
+                }
+            }
+        });
 
         res.status(200).json({
             success: true,
             data: {
-                totalUsers,
-                totalProfiles,
-                publishedProfiles,
-                pendingSubscriptions,
-                totalRevenue
+                registeredUsers,
+                createdProfiles,
+                newSubscriptions,
+                renewedSubscriptions,
+                deletedAccounts,
+                subscriptionRevenue,
+                renewalRevenue,
+                totalEarned
             }
         });
     } catch (error) {
@@ -46,7 +147,7 @@ const getDashboardStats = async (req, res, next) => {
  */
 const getAllUsers = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search, hasProfile } = req.query;
+        const { page = 1, limit = 10, search, hasProfile, sortField, sortOrder, status, startDate, endDate } = req.query;
         const query = {};
 
         if (hasProfile !== undefined) {
@@ -58,6 +159,23 @@ const getAllUsers = async (req, res, next) => {
             }
         }
 
+        if (status) {
+            if (status === 'active') query.isActive = true;
+            if (status === 'inactive') query.isActive = false;
+        }
+
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) {
+                query.createdAt.$gte = new Date(startDate);
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = end;
+            }
+        }
+
         if (search) {
             query.$or = [
                 { firstName: { $regex: search, $options: 'i' } },
@@ -66,9 +184,25 @@ const getAllUsers = async (req, res, next) => {
             ];
         }
 
+        let sortConfig = { createdAt: -1 };
+        if (sortField) {
+            const order = sortOrder === 'asc' ? 1 : -1;
+            switch (sortField) {
+                case 'name':
+                    sortConfig = { firstName: order, lastName: order };
+                    break;
+                case 'status':
+                    sortConfig = { isActive: order };
+                    break;
+                case 'joined':
+                    sortConfig = { createdAt: order };
+                    break;
+            }
+        }
+
         const users = await User.find(query)
             .select('-hashedPassword')
-            .sort({ createdAt: -1 })
+            .sort(sortConfig)
             .limit(limit * 1)
             .skip((page - 1) * limit);
 
@@ -227,7 +361,9 @@ const getAllProfilesAdmin = async (req, res, next) => {
             const subscriptions = await Subscription.find({ remainingViews: { $lte: 5 } });
             const userIdsWithLowViews = subscriptions.map(sub => sub.userId);
             query.userId = { $in: userIdsWithLowViews };
-        } else if (isActive !== undefined) {
+        }
+
+        if (isActive !== undefined) {
             query.isActive = isActive === 'true';
         }
 

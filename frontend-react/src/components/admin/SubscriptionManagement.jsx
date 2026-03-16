@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Check, X, Loader2, Eye, AlertTriangle } from 'lucide-react';
+import { Check, X, Loader2, Eye, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useConfirm } from '../ConfirmContext';
 import api from '../../services/api';
 
@@ -9,33 +9,53 @@ const SubscriptionManagement = () => {
     const confirm = useConfirm();
     const [recentPayments, setRecentPayments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingRecent, setLoadingRecent] = useState(false);
     const [processingId, setProcessingId] = useState(null);
     const [verifyModal, setVerifyModal] = useState(null); // { id, planViews, reject: boolean }
     const [overrideViews, setOverrideViews] = useState('');
     const [adminNotes, setAdminNotes] = useState('');
 
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalRecords, setTotalRecords] = useState(0);
+
     useEffect(() => {
-        fetchPayments();
+        fetchPendingPayments();
     }, []);
 
-    const fetchPayments = async () => {
-        try {
-            const [pendingRes, recentRes] = await Promise.all([
-                api.get('/subscriptions/admin/pending'),
-                api.get('/subscriptions/admin/recent-approved')
-            ]);
+    useEffect(() => {
+        fetchRecentPayments(page);
+    }, [page]);
 
-            if (pendingRes.success) {
-                setPayments(pendingRes.data);
-            }
-            if (recentRes.success) {
-                setRecentPayments(recentRes.data);
+    const fetchPendingPayments = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get('/subscriptions/admin/pending');
+            if (res.success) {
+                setPayments(res.data);
             }
         } catch (error) {
-            console.error('Fetch payments error:', error);
+            console.error('Fetch pending error:', error);
             toast.error('Failed to fetch pending payments');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchRecentPayments = async (pageNum) => {
+        setLoadingRecent(true);
+        try {
+            const res = await api.get(`/subscriptions/admin/recent-approved?page=${pageNum}&limit=10`);
+            if (res.success) {
+                setRecentPayments(res.data);
+                setTotalPages(res.totalPages || Math.ceil((res.totalRecords || res.data.length) / 10) || 1);
+                setTotalRecords(res.totalRecords || res.data.length);
+            }
+        } catch (error) {
+            console.error('Fetch recent error:', error);
+            toast.error('Failed to fetch recent payments');
+        } finally {
+            setLoadingRecent(false);
         }
     };
 
@@ -56,6 +76,10 @@ const SubscriptionManagement = () => {
                 setVerifyModal(null);
                 setOverrideViews('');
                 setAdminNotes('');
+                if (status === 'approved') {
+                    if (page === 1) fetchRecentPayments(1);
+                    else setPage(1);
+                }
             } else {
                 toast.error(response.message);
             }
@@ -89,7 +113,12 @@ const SubscriptionManagement = () => {
         <div className="space-y-12">
             {/* Pending Payments Section */}
             <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Pending Approvals</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                    Pending Approvals
+                    <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-700">
+                        {payments.length} {payments.length === 1 ? 'Record' : 'Records'}
+                    </span>
+                </h2>
                 {payments.length === 0 ? (
                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 text-center shadow-sm border border-slate-200 dark:border-slate-700">
                         <Check className="w-12 h-12 text-green-500 mx-auto mb-3 bg-green-50 dark:bg-green-900/20 rounded-full p-2" />
@@ -180,66 +209,106 @@ const SubscriptionManagement = () => {
             {/* Recent Approved Payments Section */}
             {recentPayments.length > 0 && (
                 <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Recently Approved (Last 5)</h2>
-                    <div className="grid gap-6">
-                        {recentPayments.map((payment) => (
-                            <div key={payment._id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col lg:flex-row gap-6 opacity-75 hover:opacity-100 transition-opacity">
-                                {/* Screenshot */}
-                                <div className="lg:w-1/4 flex-shrink-0">
-                                    <div className="relative group cursor-pointer" onClick={() => window.open(payment.screenshotUrl, '_blank')}>
-                                        <img
-                                            src={payment.screenshotUrl}
-                                            alt="Payment Screenshot"
-                                            className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-700 grayscale group-hover:grayscale-0 transition-all"
-                                        />
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                                            <Eye className="w-6 h-6 text-white" />
-                                            <span className="text-white ml-2 font-medium">View Full</span>
-                                        </div>
-                                    </div>
-                                </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                        All Approved Subscriptions
+                        <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-700">
+                            {totalRecords} {totalRecords === 1 ? 'Record' : 'Records'}
+                        </span>
+                    </h2>
 
-                                {/* Details */}
-                                <div className="flex-1 space-y-4">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                                                {payment.userId?.firstName && payment.userId?.lastName ? `${payment.userId.firstName} ${payment.userId.lastName}` : (payment.userId?.email || 'Unknown User')}
-                                            </h3>
-                                            <p className="text-slate-500 text-sm">{payment.userId?.email}</p>
-                                            <p className="text-xs text-slate-400 font-mono mt-1">ID: {payment.userId?._id}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-2xl font-bold text-primary-600">₹{payment.amount}</div>
-                                            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 capitalize mt-1">
-                                                <Check className="w-3 h-3 mr-1" /> Approved
+                    {loadingRecent ? (
+                        <div className="flex justify-center p-8">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+                        </div>
+                    ) : (
+                        <div className="grid gap-6">
+                            {recentPayments.map((payment) => (
+                                <div key={payment._id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col lg:flex-row gap-6 opacity-75 hover:opacity-100 transition-opacity">
+                                    {/* Screenshot */}
+                                    <div className="lg:w-1/4 flex-shrink-0">
+                                        <div className="relative group cursor-pointer" onClick={() => window.open(payment.screenshotUrl, '_blank')}>
+                                            <img
+                                                src={payment.screenshotUrl}
+                                                alt="Payment Screenshot"
+                                                className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-700 grayscale group-hover:grayscale-0 transition-all"
+                                            />
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                                                <Eye className="w-6 h-6 text-white" />
+                                                <span className="text-white ml-2 font-medium">View Full</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
-                                        <div>
-                                            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Transaction ID</span>
-                                            <p className="text-slate-900 dark:text-slate-200 font-mono font-medium">{payment.transactionDetails}</p>
+                                    {/* Details */}
+                                    <div className="flex-1 space-y-4">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="font-bold text-lg text-slate-900 dark:text-white">
+                                                    {payment.userId?.firstName && payment.userId?.lastName ? `${payment.userId.firstName} ${payment.userId.lastName}` : (payment.userId?.email || 'Unknown User')}
+                                                </h3>
+                                                <p className="text-slate-500 text-sm">{payment.userId?.email}</p>
+                                                <p className="text-xs text-slate-400 font-mono mt-1">ID: {payment.userId?._id}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-2xl font-bold text-primary-600">₹{payment.amount}</div>
+                                                <div className="inline-flex flex-col items-end mt-1">
+                                                    <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 capitalize">
+                                                        <Check className="w-3 h-3 mr-1" /> Approved
+                                                    </div>
+                                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400 mt-2">
+                                                        {payment.grantedViews || payment.planViews} Views Granted
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Approved At</span>
-                                            <p className="text-slate-900 dark:text-slate-200 text-sm">
-                                                {new Date(payment.processedAt || payment.updatedAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    </div>
 
-                                    {payment.adminNotes && (
-                                        <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                                            <span className="text-xs text-slate-500 font-semibold block mb-1">Admin Notes:</span>
-                                            <p className="text-sm text-slate-700 dark:text-slate-300">{payment.adminNotes}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
+                                            <div>
+                                                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Transaction ID</span>
+                                                <p className="text-slate-900 dark:text-slate-200 font-mono font-medium">{payment.transactionDetails}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Approved At</span>
+                                                <p className="text-slate-900 dark:text-slate-200 text-sm">
+                                                    {new Date(payment.processedAt || payment.updatedAt).toLocaleString()}
+                                                </p>
+                                            </div>
                                         </div>
-                                    )}
+
+                                        {payment.adminNotes && (
+                                            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                <span className="text-xs text-slate-500 font-semibold block mb-1">Admin Notes:</span>
+                                                <p className="text-sm text-slate-700 dark:text-slate-300">{payment.adminNotes}</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="mt-8 flex justify-center items-center gap-2">
+                            <button
+                                onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                disabled={page === 1}
+                                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ChevronLeft className="w-5 h-5 text-slate-500" />
+                            </button>
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 px-4">
+                                Page {page} of {totalPages}
+                            </span>
+                            <button
+                                onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                disabled={page === totalPages}
+                                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ChevronRight className="w-5 h-5 text-slate-500" />
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 

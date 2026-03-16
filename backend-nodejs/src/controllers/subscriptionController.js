@@ -111,10 +111,25 @@ const getPendingPayments = async (req, res, next) => {
  */
 const getRecentApprovedPayments = async (req, res, next) => {
     try {
-        const payments = await SubscriptionPayment.find({ status: 'approved' })
+        const { page = 1, limit = 10 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Strictly from 11-March-2026 onwards for the frontend listing
+        const START_DATE = new Date('2026-03-11T00:00:00.000Z');
+
+        const filter = {
+            status: 'approved',
+            createdAt: { $gte: START_DATE }
+        };
+
+        const totalRecords = await SubscriptionPayment.countDocuments(filter);
+        const totalPages = Math.ceil(totalRecords / parseInt(limit));
+
+        const payments = await SubscriptionPayment.find(filter)
             .populate('userId', 'firstName lastName email profileCode')
             .sort({ processedAt: -1, requestedAt: -1 })
-            .limit(5);
+            .skip(skip)
+            .limit(parseInt(limit));
 
         // Generate presigned URLs for screenshots
         const paymentsWithSignedUrls = await Promise.all(
@@ -129,7 +144,10 @@ const getRecentApprovedPayments = async (req, res, next) => {
 
         res.json({
             success: true,
-            data: paymentsWithSignedUrls
+            data: paymentsWithSignedUrls,
+            totalPages,
+            totalRecords,
+            currentPage: parseInt(page)
         });
     } catch (error) {
         next(error);
@@ -175,14 +193,15 @@ const verifyPayment = async (req, res, next) => {
         }
 
         if (status === 'approved') {
+            // Calculate views: Plan views + Admin override (if any)
+            const finalViews = overrideViews ? parseInt(overrideViews) : payment.planViews;
+
             payment.status = 'approved';
             payment.adminId = adminId;
             payment.adminNotes = adminNotes;
             payment.processedAt = Date.now();
+            payment.grantedViews = finalViews;
             await payment.save();
-
-            // Calculate views: Plan views + Admin override (if any)
-            const finalViews = overrideViews ? parseInt(overrideViews) : payment.planViews;
 
             // Create or update subscription
             // Note: Currently we'll create a new subscription or extend existing?

@@ -11,6 +11,7 @@ const ProfileManagement = () => {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalRecords, setTotalRecords] = useState(0);
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [deleteLoading, setDeleteLoading] = useState(null);
@@ -46,8 +47,9 @@ const ProfileManagement = () => {
 
             const response = await api.get(`/admin/profiles?${queryParams}`);
             if (response.success) {
-                setProfiles(response.data);
-                setTotalPages(response.totalPages);
+                setProfiles(response.data.profiles || response.data);
+                setTotalPages(response.data.totalPages || response.totalPages);
+                setTotalRecords(response.data.total || response.totalProfiles || 0);
             }
         } catch (error) {
             console.error('Error fetching profiles:', error);
@@ -209,8 +211,13 @@ const ProfileManagement = () => {
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Header / Search / Filter */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="flex items-center justify-between w-full md:w-auto gap-4">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Profile Management</h2>
+                <div className="flex items-center justify-between w-full md:w-auto gap-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Profile Management</h2>
+                        <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-700">
+                            {totalRecords} {totalRecords === 1 ? 'Record' : 'Records'}
+                        </span>
+                    </div>
                     <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
                         <button
                             onClick={() => setViewMode('active')}
@@ -290,6 +297,9 @@ const ProfileManagement = () => {
                             <th className="px-6 py-3 font-semibold">Profile</th>
                             <th className="px-6 py-3 font-semibold">Code</th>
                             <th className="px-6 py-3 font-semibold">Status</th>
+                            {(viewMode === 'active' || viewMode === 'inactive' || viewMode === 'renew-required') && (
+                                <th className="px-6 py-3 font-semibold">Date</th>
+                            )}
                             <th className="px-6 py-3 font-semibold">Created By</th>
                             <th className="px-6 py-3 font-semibold">Unlocks Left</th>
                             <th className="px-6 py-3 font-semibold text-right">Actions</th>
@@ -388,6 +398,14 @@ const ProfileManagement = () => {
                                                     )}
                                                 </div>
                                             </td>
+                                            {(viewMode === 'active' || viewMode === 'inactive' || viewMode === 'renew-required') && (
+                                                <td className="px-6 py-4 text-sm text-slate-500">
+                                                    {viewMode === 'inactive' && (profile.inactiveDate || profile.deletedAt)
+                                                        ? new Date(profile.inactiveDate || profile.deletedAt).toLocaleDateString()
+                                                        : new Date(profile.createdAt).toLocaleDateString()
+                                                    }
+                                                </td>
+                                            )}
                                             <td className="px-6 py-4 text-sm text-slate-500">
                                                 {profile.userId?.email || 'N/A'}
                                             </td>
