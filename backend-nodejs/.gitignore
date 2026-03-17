@@ -36,3 +36,10 @@ build/
 
 **/lint_output.txt
 **/build_output.txt
+# Puppeteer cache
+.puppeteer_cache/
+
+# Text files
+*.txt
+*.log
+*.lock
