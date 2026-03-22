@@ -131,7 +131,7 @@ const Register = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                                    First Name
+                                    Bride/Groom First Name
                                 </label>
                                 <input
                                     type="text"
@@ -145,7 +145,7 @@ const Register = () => {
                             </div>
                             <div>
                                 <label className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5 block">
-                                    Last Name
+                                    Bride/Groom Last Name
                                 </label>
                                 <input
                                     type="text"

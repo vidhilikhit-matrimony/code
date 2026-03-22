@@ -40,6 +40,15 @@ const submitPayment = async (req, res, next) => {
             });
         }
 
+        // Block duplicate pending payment
+        const existingPending = await SubscriptionPayment.findOne({ userId, status: 'pending', type: 'payment' });
+        if (existingPending) {
+            return res.status(409).json({
+                success: false,
+                message: 'You already have a payment awaiting verification. Please wait for the admin to approve or reject it before submitting again.'
+            });
+        }
+
         // Upload screenshot
         const screenshotUrl = await uploadToS3(
             req.file.buffer,
@@ -267,9 +276,32 @@ const verifyPayment = async (req, res, next) => {
     }
 };
 
+/**
+ * Get current user's own pending payment status
+ * GET /api/subscriptions/my-status
+ */
+const getMyPaymentStatus = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+        const pending = await SubscriptionPayment.findOne(
+            { userId, status: 'pending', type: 'payment' },
+            { status: 1, requestedAt: 1, transactionDetails: 1 }
+        ).sort({ requestedAt: -1 });
+
+        res.json({
+            success: true,
+            hasPending: !!pending,
+            payment: pending || null
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     submitPayment,
     getPendingPayments,
     getRecentApprovedPayments,
-    verifyPayment
+    verifyPayment,
+    getMyPaymentStatus
 };

@@ -9,7 +9,9 @@ const {
     toggleUserStatus,
     deleteUser,
     getAllProfilesAdmin,
-    updateSubscriptionUnlocks
+    updateSubscriptionUnlocks,
+    grantUnlocksWithoutPayment,
+    getAdminGrantedPayments
 } = require('../controllers/adminController');
 
 // All admin routes require authentication and admin privileges
@@ -36,4 +38,11 @@ router.get('/profiles', getAllProfilesAdmin);
 // PUT /api/admin/subscriptions/:id/unlocks - Update subscription unlocks
 router.put('/subscriptions/:id/unlocks', updateSubscriptionUnlocks);
 
+// POST /api/admin/subscriptions/grant - Grant unlocks without payment (admin)
+router.post('/subscriptions/grant', grantUnlocksWithoutPayment);
+
+// GET /api/admin/subscriptions/admin-granted - Get all admin-granted records
+router.get('/subscriptions/admin-granted', getAdminGrantedPayments);
+
 module.exports = router;
+

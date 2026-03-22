@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle, UserPlus, X, Power } from 'lucide-react';
+import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle, UserPlus, X, Power, Gift, AlertTriangle } from 'lucide-react';
 import { useConfirm } from '../ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -17,8 +17,14 @@ const ProfileManagement = () => {
     const [deleteLoading, setDeleteLoading] = useState(null);
     const [activatingLoading, setActivatingLoading] = useState(null);
     const confirm = useConfirm();
-    const [editingUnlocks, setEditingUnlocks] = useState(null); // { id: profileId, value: number, subId: subscriptionId }
+    const [editingUnlocks, setEditingUnlocks] = useState(null);
     const [updateLoading, setUpdateLoading] = useState(false);
+
+    // Grant unlocks without payment
+    const [grantModal, setGrantModal] = useState(null); // { userId, profileName }
+    const [grantUnlocks, setGrantUnlocks] = useState('');
+    const [grantNotes, setGrantNotes] = useState('');
+    const [grantLoading, setGrantLoading] = useState(false);
 
     const navigate = useNavigate();
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -105,18 +111,14 @@ const ProfileManagement = () => {
         setActivatingLoading(profile._id);
 
         try {
-            console.log(`Making PUT request to / admin / users / ${userId}/status with { isActive: ${newStatus} }`);
-            const response = await api.put(`/ admin / users / ${userId}/status`, { isActive: newStatus });
-            console.log("API Response:", response);
+            const response = await api.put(`/admin/users/${userId}/status`, { isActive: newStatus });
 
             if (response.success) {
                 toast.success(`Profile ${newStatus ? 'activated' : 'deactivated'} successfully`);
 
-                // If we are looking at a specific filtered view, we might want to remove it
                 if ((viewMode === 'inactive' && newStatus) || (viewMode === 'active' && !newStatus)) {
                     setProfiles(profiles.filter(p => p._id !== profile._id));
                 } else {
-                    // Update the profile locally if viewing 'all' or another view where it should stay
                     setProfiles(profiles.map(p =>
                         p._id === profile._id
                             ? { ...p, isActive: newStatus, inactiveDate: newStatus ? null : new Date().toISOString() }
@@ -124,14 +126,46 @@ const ProfileManagement = () => {
                     ));
                 }
             } else {
-                console.error("API indicated failure:", response);
                 toast.error(response.message || `Failed to ${actionText} profile`);
             }
         } catch (error) {
-            console.error(`Error ${actionText}ing profile:`, error);
             toast.error(error.message || `Failed to ${actionText} profile`);
         } finally {
             setActivatingLoading(null);
+        }
+    };
+
+    const handleGrantUnlocks = async () => {
+        if (!grantModal) return;
+        const unlocks = parseInt(grantUnlocks);
+        if (!unlocks || unlocks <= 0) return toast.error('Enter a valid number of unlocks');
+
+        setGrantLoading(true);
+        try {
+            const res = await api.post('/admin/subscriptions/grant', {
+                userId: grantModal.userId,
+                unlocksToAdd: unlocks,
+                adminNotes: grantNotes.trim()
+            });
+
+            if (res.success) {
+                toast.success(res.message);
+                // Update the profile's unlocksLeft count locally
+                setProfiles(prev => prev.map(p =>
+                    (p.userId?._id || p.userId) === grantModal.userId
+                        ? { ...p, unlocksLeft: (p.unlocksLeft || 0) + unlocks, hasSubscription: true }
+                        : p
+                ));
+                setGrantModal(null);
+                setGrantUnlocks('');
+                setGrantNotes('');
+            } else {
+                toast.error(res.message || 'Failed to grant unlocks');
+            }
+        } catch (error) {
+            toast.error(error?.message || 'Failed to grant unlocks');
+        } finally {
+            setGrantLoading(false);
         }
     };
 
@@ -457,6 +491,23 @@ const ProfileManagement = () => {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                {/* Gift icon — only for active profiles */}
+                                                {profile.isActive && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setGrantModal({
+                                                                userId: profile.userId?._id || profile.userId,
+                                                                profileName: profile.firstName
+                                                            });
+                                                            setGrantUnlocks('');
+                                                            setGrantNotes('');
+                                                        }}
+                                                        className="p-2 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-colors"
+                                                        title="Grant Unlocks Without Payment"
+                                                    >
+                                                        <Gift className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => handleToggleProfileStatus(profile)}
                                                     disabled={activatingLoading === profile._id}
@@ -468,8 +519,6 @@ const ProfileManagement = () => {
                                                 >
                                                     {activatingLoading === profile._id ? (
                                                         <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : profile.isActive ? (
-                                                        <Power className="w-4 h-4" /> // Replace with PowerOff if available, else Power works
                                                     ) : (
                                                         <Power className="w-4 h-4" />
                                                     )}
@@ -566,6 +615,93 @@ const ProfileManagement = () => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Grant Unlocks Modal ───────────────────────── */}
+            {grantModal && (
+
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Gift className="w-5 h-5 text-violet-500" />
+                                Grant Unlocks
+                            </h3>
+                            <button onClick={() => setGrantModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <p className="text-sm text-slate-600 dark:text-slate-300 mb-5">
+                            Granting unlocks to <span className="font-bold text-slate-900 dark:text-white">{grantModal.profileName}</span> without requiring payment.
+                        </p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                                    Unlocks to Add <span className="text-rose-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={grantUnlocks}
+                                        onChange={(e) => {
+                                            let val = e.target.value.replace(/[^0-9]/g, '');
+                                            if (val.length > 4) val = val.slice(0, 4);
+                                            if (val !== '' && parseInt(val) > 9999) val = '9999';
+                                            setGrantUnlocks(val);
+                                        }}
+                                        autoFocus
+                                        placeholder="e.g. 10"
+                                        className="input pr-16 w-full"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">unlocks</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                                    Admin Notes <span className="text-slate-400 font-normal">(optional)</span>
+                                </label>
+                                <textarea
+                                    value={grantNotes}
+                                    onChange={(e) => setGrantNotes(e.target.value)}
+                                    placeholder="Reason for granting unlocks..."
+                                    rows={2}
+                                    className="input w-full resize-none"
+                                />
+                            </div>
+
+                            <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/30 rounded-lg p-3">
+                                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                    This adds unlocks directly without any payment. It will be tracked under "Approved without Payment" in the Subscriptions tab.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setGrantModal(null)}
+                                className="flex-1 btn bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleGrantUnlocks}
+                                disabled={grantLoading || !grantUnlocks}
+                                className="flex-1 flex items-center justify-center gap-2 btn bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-60"
+                            >
+                                {grantLoading
+                                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                                    : <Gift className="w-4 h-4" />
+                                }
+                                Grant
+                            </button>
                         </div>
                     </div>
                 </div>

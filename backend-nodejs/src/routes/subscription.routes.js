@@ -7,7 +7,8 @@ const {
     submitPayment,
     getPendingPayments,
     getRecentApprovedPayments,
-    verifyPayment
+    verifyPayment,
+    getMyPaymentStatus
 } = require('../controllers/subscriptionController');
 
 // All routes require authentication
@@ -15,6 +16,9 @@ router.use(authenticate);
 
 // POST /api/subscriptions/payment - Submit payment
 router.post('/payment', upload.single('screenshot'), submitPayment);
+
+// GET /api/subscriptions/my-status - Check own pending payments
+router.get('/my-status', getMyPaymentStatus);
 
 // Admin Routes
 // GET /api/subscriptions/admin/pending - Get pending payments

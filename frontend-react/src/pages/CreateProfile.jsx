@@ -28,7 +28,7 @@ const INITIAL_FORM = {
     firstName: '', lastName: '', dateOfBirth: '', gender: '', height: '',
     birthPlace: '',
     maritalStatus: '',
-    caste: '', subCaste: '', gotra: '', rashi: '', nakshatra: '', nadi: '', timeOfBirth: '',
+    caste: '', subCaste: '', gotra: '', rashi: '', nakshatra: '', nadi: '', gana: '', charana: '', timeOfBirth: '',
     education: '', occupation: '', annualIncome: '', assets: '',
     fatherName: '', fatherOccupation: '', motherName: '', motherOccupation: '', brother: '', sister: '', profileFor: '',
     currentLocation: '', workingPlace: '', country: '', postalAddress: '', contactNumber: '',
@@ -88,8 +88,10 @@ const NAKSHATRAS = [
 
 const NADIS = ['Adi', 'Madhya', 'Antya', 'Other'];
 
+const GANA_OPTIONS = ['Deva Gana', 'Manushya Gana', 'Rakshasa Gana'];
+
 // ─── Form Field Component ───────────────────────────────────────
-const FormField = ({ label, name, type = 'text', value, onChange, required, options, placeholder, icon: Icon, note, readOnly }) => (
+const FormField = ({ label, name, type = 'text', value, onChange, required, options, placeholder, icon: Icon, note, readOnly, rows }) => (
     <div className="space-y-1.5 group relative">
         <label htmlFor={name} className="label flex items-center gap-1.5">
             {Icon && <Icon className="w-3.5 h-3.5 text-primary-500" />}
@@ -111,8 +113,8 @@ const FormField = ({ label, name, type = 'text', value, onChange, required, opti
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                rows={3}
-                className="input resize-none"
+                rows={rows || 3}
+                className="input resize-none overflow-y-auto"
                 required={required}
                 {...(options?.minLength ? { minLength: options.minLength } : {})}
                 {...(options?.title ? { title: options.title } : {})}
@@ -314,6 +316,8 @@ const CreateProfile = () => {
                         rashi: p.rashi || '',
                         nakshatra: p.nakshatra || '',
                         nadi: p.nadi || '',
+                        gana: p.gana || '',
+                        charana: p.charana || '',
                         timeOfBirth: p.timeOfBirth || '',
                         education: p.education || '',
                         occupation: p.occupation || '',
@@ -807,6 +811,40 @@ const CreateProfile = () => {
                         placeholder="Enter your nadi"
                         required={formData.caste !== 'Lingayat'}
                     />
+
+                    {/* Gana & Charana — Brahmin only (optional) */}
+                    {formData.caste === 'Brahmin' && (
+                        <>
+                            <div className="space-y-1.5">
+                                <label className="label flex items-center gap-1.5">
+                                    <Heart className="w-3.5 h-3.5 text-primary-500" />
+                                    Gana
+                                </label>
+                                <CustomSelect
+                                    name="gana"
+                                    value={formData.gana}
+                                    onChange={handleChange}
+                                    options={GANA_OPTIONS.map(g => ({ value: g, label: g }))}
+                                    placeholder="Select Gana"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label htmlFor="charana" className="label flex items-center gap-1.5">
+                                    <Heart className="w-3.5 h-3.5 text-primary-500" />
+                                    Charana
+                                </label>
+                                <input
+                                    id="charana"
+                                    name="charana"
+                                    type="text"
+                                    value={formData.charana}
+                                    onChange={handleChange}
+                                    placeholder="e.g. 1, 2, 3, 4"
+                                    className="input"
+                                />
+                            </div>
+                        </>
+                    )}
                 </div>
             );
             case 3: return (
@@ -825,7 +863,7 @@ const CreateProfile = () => {
                     <FormField label="Mother's Occupation" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} required icon={Briefcase} placeholder="e.g. Homemaker, Teacher" />
                     <FormField label="Number of Brothers" name="brother" value={formData.brother} onChange={handleChange} required placeholder="e.g. 1" note="Add None if no brother" />
                     <FormField label="Number of sisters" name="sister" value={formData.sister} onChange={handleChange} required placeholder="e.g. 2" note="Add None if no sister" />
-                    <FormField label="Assets" name="assets" value={formData.assets} onChange={handleChange} required placeholder="e.g. House, Car" note="Add None if no assets" />
+                    <FormField label="Assets" name="assets" type="textarea" rows={5} value={formData.assets} onChange={handleChange} required placeholder="e.g. House, Car, Agricultural Land" note="Add None if no assets" />
                 </div>
             );
             case 5: return (

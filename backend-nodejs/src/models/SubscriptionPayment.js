@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const paymentStatusEnum = ['pending', 'approved', 'rejected'];
+const paymentTypeEnum = ['payment', 'admin_grant'];
 
 const subscriptionPaymentSchema = new mongoose.Schema({
     userId: {
@@ -9,30 +10,32 @@ const subscriptionPaymentSchema = new mongoose.Schema({
         required: true,
         index: true
     },
-    planId: {
+    type: {
         type: String,
-        required: true
+        enum: paymentTypeEnum,
+        default: 'payment',
+        index: true
+    },
+    planId: {
+        type: String
     },
     planViews: {
-        type: Number,
-        required: true
+        type: Number
     },
     grantedViews: {
         type: Number
     },
     amount: {
         type: Number,
-        required: true,
+        default: 0,
         min: 0
     },
     transactionDetails: {
         type: String,
-        required: true,
         trim: true
     },
     screenshotUrl: {
-        type: String,
-        required: true
+        type: String
     },
     status: {
         type: String,

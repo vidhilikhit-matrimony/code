@@ -472,6 +472,129 @@ const updateSubscriptionUnlocks = async (req, res, next) => {
     }
 };
 
+/**
+ * Grant Unlocks Without Payment (Admin)
+ * POST /api/admin/subscriptions/grant
+ */
+const grantUnlocksWithoutPayment = async (req, res, next) => {
+    try {
+        const { userId, unlocksToAdd, adminNotes } = req.body;
+        const adminId = req.user._id;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'User ID is required' });
+        }
+
+        const unlocks = parseInt(unlocksToAdd);
+        if (!unlocks || unlocks <= 0 || unlocks > 9999) {
+            return res.status(400).json({ success: false, message: 'Unlocks must be a positive number (max 9999)' });
+        }
+
+        // Verify the user has an active profile
+        const activeProfile = await Profile.findOne({ userId, isActive: true });
+        if (!activeProfile) {
+            return res.status(400).json({
+                success: false,
+                message: 'No active profile found for this user. Unlocks can only be granted to users with an active profile.'
+            });
+        }
+
+        // Find or create subscription
+        let subscription = await Subscription.findOne({ userId }).sort({ createdAt: -1 });
+        const now = new Date();
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+        if (subscription) {
+            subscription.remainingViews += unlocks;
+            subscription.maxViews += unlocks;
+            // Extend validity
+            if (subscription.validTo < now) {
+                subscription.validTo = oneYearFromNow;
+                subscription.validFrom = now;
+            } else {
+                const extended = new Date(subscription.validTo);
+                extended.setFullYear(extended.getFullYear() + 1);
+                subscription.validTo = extended;
+            }
+            subscription.status = 'active';
+            await subscription.save();
+        } else {
+            const crypto = require('crypto');
+            subscription = await Subscription.create({
+                userId,
+                token: crypto.randomBytes(16).toString('hex').toUpperCase(),
+                maxViews: unlocks,
+                remainingViews: unlocks,
+                validFrom: now,
+                validTo: oneYearFromNow,
+                status: 'active',
+                tokenGeneratedByAdminId: adminId
+            });
+        }
+
+        // Create admin_grant record for audit trail
+        await SubscriptionPayment.create({
+            userId,
+            type: 'admin_grant',
+            grantedViews: unlocks,
+            amount: 0,
+            transactionDetails: 'Admin Grant - No Payment',
+            status: 'approved',
+            adminId,
+            adminNotes: adminNotes || '',
+            processedAt: now
+        });
+
+        // Notify the user
+        await User.findByIdAndUpdate(userId, {
+            pendingNotification: `Admin has granted you ${unlocks} profile unlock${unlocks > 1 ? 's' : ''}. You can now view contact details of profiles.`
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: `Successfully granted ${unlocks} unlock${unlocks > 1 ? 's' : ''} to the user.`,
+            data: { subscription }
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Get Admin Granted Payments (without payment) — Admin
+ * GET /api/admin/subscriptions/admin-granted
+ */
+const getAdminGrantedPayments = async (req, res, next) => {
+    try {
+        const { page = 1, limit = 10 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const filter = { type: 'admin_grant' };
+
+        const totalRecords = await SubscriptionPayment.countDocuments(filter);
+        const totalPages = Math.ceil(totalRecords / parseInt(limit));
+
+        const grants = await SubscriptionPayment.find(filter)
+            .populate('userId', 'firstName lastName email')
+            .populate('adminId', 'firstName lastName email')
+            .sort({ processedAt: -1, createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        return res.status(200).json({
+            success: true,
+            data: grants,
+            totalPages: totalPages || 1,
+            totalRecords,
+            currentPage: parseInt(page)
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboardStats,
     getAllUsers,
@@ -479,5 +602,7 @@ module.exports = {
     toggleUserStatus,
     deleteUser,
     getAllProfilesAdmin,
-    updateSubscriptionUnlocks
+    updateSubscriptionUnlocks,
+    grantUnlocksWithoutPayment,
+    getAdminGrantedPayments
 };

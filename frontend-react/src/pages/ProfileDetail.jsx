@@ -22,7 +22,7 @@ const DetailRow = ({ icon: Icon, label, value, iconColor = 'text-primary-500', c
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</p>
-                <p className="text-sm text-slate-900 dark:text-slate-100 font-semibold">{value}</p>
+                <p className="text-sm text-slate-900 dark:text-slate-100 font-semibold whitespace-pre-wrap break-words">{value}</p>
             </div>
         </div>
     );
@@ -561,6 +561,8 @@ const ProfileDetail = () => {
                             <DetailRow icon={Star} label="Rashi" value={profile.rashi} iconColor="text-amber-500" />
                             <DetailRow icon={Star} label="Nakshatra" value={profile.nakshatra} iconColor="text-amber-500" />
                             <DetailRow icon={Star} label="Nadi" value={profile.nadi} iconColor="text-amber-500" />
+                            <DetailRow icon={Star} label="Gana" value={profile.gana} iconColor="text-amber-500" />
+                            <DetailRow icon={Star} label="Charana" value={profile.charana} iconColor="text-amber-500" />
                             <DetailRow icon={Clock} label="Time of Birth" value={profile.timeOfBirth} iconColor="text-amber-500" />
                         </Section>
 

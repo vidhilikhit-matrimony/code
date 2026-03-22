@@ -12,7 +12,7 @@ import {
     Heart, Users, Shield, Star, Phone, Mail, FileDown,
     LogOut, Edit3, ChevronRight, ChevronLeft, MapPin, Award,
     LayoutDashboard, Search, Fingerprint, Activity,
-    Sunrise, LogIn, LockOpen, Menu, X
+    Sunrise, LogIn, LockOpen, Menu, X, Eye
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 
@@ -354,6 +354,7 @@ const Home = () => {
     const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [visitorCount, setVisitorCount] = useState(null);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -364,6 +365,32 @@ const Home = () => {
             } catch { /* no profile */ }
         })();
     }, [isAuthenticated]);
+
+    useEffect(() => {
+        const fetchVisitors = async () => {
+            try {
+                const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                const alreadyVisited = sessionStorage.getItem('vl_visited');
+                if (!alreadyVisited) {
+                    const res = await fetch(`${API_BASE}/visitors/increment`, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) { setVisitorCount(data.count); sessionStorage.setItem('vl_visited', '1'); }
+                } else {
+                    const res = await fetch(`${API_BASE}/visitors`);
+                    const data = await res.json();
+                    if (data.success) setVisitorCount(data.count);
+                }
+            } catch { /* silently ignore */ }
+        };
+        fetchVisitors();
+    }, []);
+
+    const formatVisitors = (n) => {
+        if (n === null) return null;
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+        return n.toLocaleString();
+    };
 
     const handleLogout = () => { dispatch(logout()); navigate('/'); setShowLogoutModal(false); };
 
@@ -390,6 +417,13 @@ const Home = () => {
                         {/* Desktop Navigation */}
                         <div className="hidden lg:flex items-center gap-8">
                             <nav className="flex items-center gap-6 text-[13px] font-bold text-slate-600 uppercase tracking-wider">
+                                {visitorCount !== null && (
+                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-primary-600 text-[10px] font-bold tracking-wide normal-case">
+                                        <Eye className="w-3 h-3" />
+                                        <span className="text-slate-500">Total Visitors:</span>
+                                        <span>{formatVisitors(visitorCount)}</span>
+                                    </span>
+                                )}
                                 <button onClick={() => navigate('/about-us')} className="hover:text-primary-600 transition-colors">About</button>
                                 <button onClick={() => navigate('/contact-us')} className="hover:text-primary-600 transition-colors">Contact</button>
                                 <button onClick={() => navigate('/help-faq')} className="hover:text-primary-600 transition-colors">FAQ</button>
@@ -477,7 +511,16 @@ const Home = () => {
                             className="lg:hidden bg-white border-t border-slate-100 overflow-hidden"
                         >
                             <div className="px-4 py-6 space-y-4">
-                                <button onClick={() => navigate('/about-us')} className="block w-full text-left font-bold text-slate-600 py-2">About Us</button>
+                                {visitorCount !== null && (
+                                    <div className="flex items-center gap-2 py-2 px-3 rounded-xl bg-orange-50 border border-orange-200">
+                                        <Eye className="w-4 h-4 text-primary-600" />
+                                        <span className="text-xs font-bold text-slate-500">Total Visitors:</span>
+                                        <span className="text-sm font-extrabold text-primary-600">{formatVisitors(visitorCount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center justify-between">
+                                    <button onClick={() => navigate('/about-us')} className="font-bold text-slate-600 py-2">About Us</button>
+                                </div>
                                 <button onClick={() => navigate('/contact-us')} className="block w-full text-left font-bold text-slate-600 py-2">Contact Us</button>
                                 <button onClick={() => navigate('/help-faq')} className="block w-full text-left font-bold text-slate-600 py-2">Help / FAQ</button>
 

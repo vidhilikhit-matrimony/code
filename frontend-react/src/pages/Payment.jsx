@@ -15,6 +15,8 @@ const Payment = () => {
     const [plans, setPlans] = useState([]);
     const [loadingPlans, setLoadingPlans] = useState(true);
     const [selectedPlan, setSelectedPlan] = useState('');
+    const [hasPendingPayment, setHasPendingPayment] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
 
     const [transactionId, setTransactionId] = useState('');
     const [screenshot, setScreenshot] = useState(null);
@@ -41,8 +43,23 @@ const Payment = () => {
                 setLoadingPlans(false);
             }
         };
+
+        const checkPendingPayment = async () => {
+            try {
+                const response = await api.get('/subscriptions/my-status');
+                if (response.success && response.hasPending) {
+                    setHasPendingPayment(true);
+                }
+            } catch (error) {
+                console.error('Failed to check pending payment status:', error);
+            }
+        };
+
         fetchPlans();
-    }, []);
+        if (user?.hasProfile) {
+             checkPendingPayment();
+        }
+    }, [user]);
 
     const handleScreenshotChange = (e) => {
         const file = e.target.files[0];
@@ -152,6 +169,16 @@ const Payment = () => {
                     </div>
                 )}
 
+                {hasPendingPayment && (
+                    <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex gap-3 text-amber-800 dark:text-amber-200">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <h3 className="font-bold">Payment Under Verification</h3>
+                            <p className="text-sm mt-1">You already have a payment request pending verification. Please wait for the admin to approve or reject your current request before submitting another.</p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left Column: Plan Selection */}
                     <div className="space-y-4">
@@ -208,15 +235,37 @@ const Payment = () => {
                             <div className="text-center py-10">
                                 <QrCode className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Ready to Pay?</h3>
-                                <p className="text-slate-500 mb-8 max-w-xs mx-auto">
+                                <p className="text-slate-500 mb-6 max-w-xs mx-auto">
                                     Selected: <strong>{currentPlan.name}</strong> (₹{currentPlan.amount})
                                 </p>
+
+                                <div className="mb-6 text-left max-w-md mx-auto">
+                                    <label className="flex items-start gap-3 cursor-pointer p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 transition-colors">
+                                        <div className="flex-shrink-0 mt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={termsAccepted}
+                                                onChange={(e) => setTermsAccepted(e.target.checked)}
+                                                disabled={!user?.hasProfile || hasPendingPayment}
+                                                className="w-5 h-5 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-800"
+                                            />
+                                        </div>
+                                        <div className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                            "I confirm that I have read and agree to the <a href="/terms" target="_blank" className="text-primary-600 hover:underline">Terms & Conditions</a> and <a href="/privacy" target="_blank" className="text-primary-600 hover:underline">Privacy Policy</a>. I understand that the platform is a matchmaking service only and does not guarantee marriage. I agree that all payments made are non-refundable, and I am responsible for verifying the authenticity of profiles and interactions."
+                                        </div>
+                                    </label>
+                                </div>
+
                                 <button
                                     onClick={() => setStep(2)}
-                                    disabled={!user?.hasProfile}
-                                    className={`btn w-full py-3 text-lg ${user?.hasProfile ? 'btn-primary' : 'bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400'}`}
+                                    disabled={!user?.hasProfile || hasPendingPayment || !termsAccepted}
+                                    className={`btn w-full py-3 text-lg ${
+                                        !user?.hasProfile || hasPendingPayment || !termsAccepted
+                                            ? 'bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400' 
+                                            : 'btn-primary'
+                                    }`}
                                 >
-                                    Proceed to Payment
+                                    {hasPendingPayment ? 'Payment Pending' : 'Proceed to Payment'}
                                 </button>
                             </div>
                         ) : (
@@ -290,11 +339,13 @@ const Payment = () => {
 
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting}
-                                    className="btn btn-primary w-full py-3"
+                                    disabled={isSubmitting || hasPendingPayment}
+                                    className="btn btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? (
                                         <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Submitting...</>
+                                    ) : hasPendingPayment ? (
+                                        'Payment Pending Verification'
                                     ) : (
                                         'Submit for Verification'
                                     )}

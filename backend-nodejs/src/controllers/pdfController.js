@@ -137,7 +137,7 @@ const downloadPublicProfilesPdf = async (req, res, next) => {
             }
         }
 
-        const profiles = await Profile.find(query).sort({ createdAt: -1 }).lean();
+        const profiles = await Profile.find(query).sort({ createdAt: 1 }).lean();
 
         if (!profiles || profiles.length === 0) {
             return res.status(404).json({
@@ -196,7 +196,7 @@ const downloadAdminProfilesPdf = async (req, res, next) => {
             }
         }
 
-        const profiles = await Profile.find(query).sort({ createdAt: -1 }).lean();
+        const profiles = await Profile.find(query).sort({ createdAt: 1 }).lean();
 
         if (!profiles || profiles.length === 0) {
             return res.status(404).json({

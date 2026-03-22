@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Check, X, Loader2, Eye, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, X, Loader2, Eye, AlertTriangle, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { useConfirm } from '../ConfirmContext';
 import api from '../../services/api';
 
@@ -11,13 +11,20 @@ const SubscriptionManagement = () => {
     const [loading, setLoading] = useState(true);
     const [loadingRecent, setLoadingRecent] = useState(false);
     const [processingId, setProcessingId] = useState(null);
-    const [verifyModal, setVerifyModal] = useState(null); // { id, planViews, reject: boolean }
+    const [verifyModal, setVerifyModal] = useState(null);
     const [overrideViews, setOverrideViews] = useState('');
     const [adminNotes, setAdminNotes] = useState('');
 
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState(0);
+
+    // ── Admin-granted records section ───────────────────────────────
+    const [adminGrants, setAdminGrants] = useState([]);
+    const [loadingGrants, setLoadingGrants] = useState(false);
+    const [grantsPage, setGrantsPage] = useState(1);
+    const [grantsTotalPages, setGrantsTotalPages] = useState(1);
+    const [grantsTotalRecords, setGrantsTotalRecords] = useState(0);
 
     useEffect(() => {
         fetchPendingPayments();
@@ -27,15 +34,16 @@ const SubscriptionManagement = () => {
         fetchRecentPayments(page);
     }, [page]);
 
+    useEffect(() => {
+        fetchAdminGrants(grantsPage);
+    }, [grantsPage]);
+
     const fetchPendingPayments = async () => {
         setLoading(true);
         try {
             const res = await api.get('/subscriptions/admin/pending');
-            if (res.success) {
-                setPayments(res.data);
-            }
+            if (res.success) setPayments(res.data);
         } catch (error) {
-            console.error('Fetch pending error:', error);
             toast.error('Failed to fetch pending payments');
         } finally {
             setLoading(false);
@@ -48,20 +56,34 @@ const SubscriptionManagement = () => {
             const res = await api.get(`/subscriptions/admin/recent-approved?page=${pageNum}&limit=10`);
             if (res.success) {
                 setRecentPayments(res.data);
-                setTotalPages(res.totalPages || Math.ceil((res.totalRecords || res.data.length) / 10) || 1);
+                setTotalPages(res.totalPages || 1);
                 setTotalRecords(res.totalRecords || res.data.length);
             }
         } catch (error) {
-            console.error('Fetch recent error:', error);
             toast.error('Failed to fetch recent payments');
         } finally {
             setLoadingRecent(false);
         }
     };
 
+    const fetchAdminGrants = async (pageNum) => {
+        setLoadingGrants(true);
+        try {
+            const res = await api.get(`/admin/subscriptions/admin-granted?page=${pageNum}&limit=10`);
+            if (res.success) {
+                setAdminGrants(res.data);
+                setGrantsTotalPages(res.totalPages || 1);
+                setGrantsTotalRecords(res.totalRecords || res.data.length);
+            }
+        } catch (error) {
+            toast.error('Failed to fetch admin-granted records');
+        } finally {
+            setLoadingGrants(false);
+        }
+    };
+
     const handleVerify = async (status) => {
         if (!verifyModal) return;
-
         setProcessingId(verifyModal.id);
         try {
             const response = await api.post(`/subscriptions/admin/verify/${verifyModal.id}`, {
@@ -84,7 +106,6 @@ const SubscriptionManagement = () => {
                 toast.error(response.message);
             }
         } catch (error) {
-            console.error('Verify payment error:', error);
             toast.error('Failed to verify payment');
         } finally {
             setProcessingId(null);
@@ -99,19 +120,10 @@ const SubscriptionManagement = () => {
         );
     }
 
-    if (payments.length === 0 && recentPayments.length === 0) {
-        return (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center shadow-sm border border-slate-200 dark:border-slate-700">
-                <Check className="w-16 h-16 text-green-500 mx-auto mb-4 bg-green-50 dark:bg-green-900/20 rounded-full p-3" />
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">All Caught Up!</h3>
-                <p className="text-slate-500">No pending or recent payment requests at the moment.</p>
-            </div>
-        );
-    }
-
     return (
         <div className="space-y-12">
-            {/* Pending Payments Section */}
+
+            {/* ── Pending Payments Section ─────────────────────── */}
             <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                     Pending Approvals
@@ -206,7 +218,7 @@ const SubscriptionManagement = () => {
                 )}
             </div>
 
-            {/* Recent Approved Payments Section */}
+            {/* ── All Approved Subscriptions (with payment) ────── */}
             {recentPayments.length > 0 && (
                 <div>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
@@ -312,7 +324,110 @@ const SubscriptionManagement = () => {
                 </div>
             )}
 
-            {/* Verification Modal */}
+            {/* ── Approved without Payment (Admin Grants) ─────── */}
+            <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                    <Gift className="w-5 h-5 text-violet-500" />
+                    Approved without Payment
+                    <span className="px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-300 text-xs font-semibold rounded-full border border-violet-200 dark:border-violet-700/40">
+                        {grantsTotalRecords} {grantsTotalRecords === 1 ? 'Record' : 'Records'}
+                    </span>
+                </h2>
+
+                {loadingGrants ? (
+                    <div className="flex justify-center p-8">
+                        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+                    </div>
+                ) : adminGrants.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 text-center shadow-sm border border-violet-100 dark:border-violet-700/20">
+                        <Gift className="w-12 h-12 text-violet-300 mx-auto mb-3" />
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">No admin-granted unlocks yet</h3>
+                        <p className="text-slate-500 text-sm mt-1">
+                            Use the <span className="text-violet-600 font-semibold">🎁 gift icon</span> on any active profile in the Profiles tab to grant unlocks.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid gap-4">
+                        {adminGrants.map((grant) => (
+                            <div
+                                key={grant._id}
+                                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-violet-100 dark:border-violet-700/30 p-5 flex flex-col sm:flex-row gap-4 items-start"
+                            >
+                                {/* Icon */}
+                                <div className="w-11 h-11 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
+                                    <Gift className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                                </div>
+
+                                {/* Main info */}
+                                <div className="flex-1 space-y-3 min-w-0">
+                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                                        <div>
+                                            <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
+                                                {grant.userId?.firstName && grant.userId?.lastName
+                                                    ? `${grant.userId.firstName} ${grant.userId.lastName}`
+                                                    : grant.userId?.email || 'Unknown User'}
+                                            </h3>
+                                            <p className="text-slate-500 text-sm">{grant.userId?.email}</p>
+                                            <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {grant.userId?._id}</p>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full text-sm font-bold whitespace-nowrap">
+                                                <Gift className="w-3.5 h-3.5" />
+                                                +{grant.grantedViews} Unlocks
+                                            </span>
+                                            <span className="text-xs text-slate-400">
+                                                {new Date(grant.processedAt || grant.createdAt).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-lg text-sm">
+                                        <div>
+                                            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">Granted by</span>
+                                            <p className="text-slate-700 dark:text-slate-300 font-medium">
+                                                {grant.adminId?.firstName && grant.adminId?.lastName
+                                                    ? `${grant.adminId.firstName} ${grant.adminId.lastName}`
+                                                    : grant.adminId?.email || 'Admin'}
+                                            </p>
+                                        </div>
+                                        {grant.adminNotes && (
+                                            <div>
+                                                <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">Notes</span>
+                                                <p className="text-slate-700 dark:text-slate-300">{grant.adminNotes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Pagination for admin grants */}
+                {grantsTotalPages > 1 && (
+                    <div className="mt-6 flex justify-center items-center gap-2">
+                        <button
+                            onClick={() => { setGrantsPage(p => Math.max(1, p - 1)); }}
+                            disabled={grantsPage === 1}
+                            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="w-5 h-5 text-slate-500" />
+                        </button>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 px-4">
+                            Page {grantsPage} of {grantsTotalPages}
+                        </span>
+                        <button
+                            onClick={() => { setGrantsPage(p => Math.min(grantsTotalPages, p + 1)); }}
+                            disabled={grantsPage === grantsTotalPages}
+                            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight className="w-5 h-5 text-slate-500" />
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* ── Verification Modal ───────────────────────────── */}
             {verifyModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
@@ -333,7 +448,7 @@ const SubscriptionManagement = () => {
                                         onChange={(e) => {
                                             let val = e.target.value.replace(/[^0-9]/g, '');
                                             if (val.length > 3) val = val.slice(0, 3);
-                                            if (val !== '' && parseInt(val) > 999) val = "999";
+                                            if (val !== '' && parseInt(val) > 999) val = '999';
                                             setOverrideViews(val);
                                         }}
                                         className="input pr-16"
@@ -362,7 +477,7 @@ const SubscriptionManagement = () => {
                             <textarea
                                 value={adminNotes}
                                 onChange={(e) => setAdminNotes(e.target.value)}
-                                placeholder={verifyModal.reject ? "Reason for rejection..." : "Any internal notes..."}
+                                placeholder={verifyModal.reject ? 'Reason for rejection...' : 'Any internal notes...'}
                                 className="input min-h-[80px]"
                             />
                         </div>

@@ -84,6 +84,14 @@ const profileSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    gana: {
+        type: String,
+        trim: true
+    },
+    charana: {
+        type: String,
+        trim: true
+    },
     timeOfBirth: {
         type: String,  // Store as HH:MM format
         trim: true
