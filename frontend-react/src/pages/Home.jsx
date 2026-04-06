@@ -387,9 +387,7 @@ const Home = () => {
 
     const formatVisitors = (n) => {
         if (n === null) return null;
-        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-        return n.toLocaleString();
+        return n;
     };
 
     const handleLogout = () => { dispatch(logout()); navigate('/'); setShowLogoutModal(false); };

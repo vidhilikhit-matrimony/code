@@ -166,6 +166,55 @@ const AdminStats = () => {
                     </div>
                 ))}
             </div>
+
+            {/* Caste-Based Gender Stats */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
+                <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Users className="w-5 h-5 text-primary-500" />
+                        Profiles by Caste &amp; Gender
+                    </h3>
+                    <p className="text-sm text-slate-500 mt-1">Breakdown of total male and female profiles based on community caste.</p>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
+                            <tr>
+                                <th className="px-6 py-4 font-medium">Caste</th>
+                                <th className="px-6 py-4 font-medium text-center">Male Profiles</th>
+                                <th className="px-6 py-4 font-medium text-center">Female Profiles</th>
+                                <th className="px-6 py-4 font-medium text-center">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                            {stats.casteStats && stats.casteStats.length > 0 ? (
+                                stats.casteStats.map((casteStat, i) => (
+                                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                            {casteStat.caste}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-blue-600 dark:text-blue-400 font-medium">
+                                            {casteStat.male}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-pink-600 dark:text-pink-400 font-medium">
+                                            {casteStat.female}
+                                        </td>
+                                        <td className="px-6 py-4 text-center font-bold text-slate-700 dark:text-slate-300">
+                                            {casteStat.total}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                                        No caste stats available
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };

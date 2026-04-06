@@ -236,9 +236,9 @@ const ProfileManagement = () => {
         }
     };
 
-    const handleSelectUserForProfile = (userId) => {
+    const handleSelectUserForProfile = (user) => {
         setShowCreateModal(false);
-        navigate(`/create-profile?adminUserId=${userId}`);
+        navigate(`/create-profile?adminUserId=${user._id}&firstName=${encodeURIComponent(user.firstName || '')}&lastName=${encodeURIComponent(user.lastName || '')}`);
     };
 
     return (
@@ -606,7 +606,7 @@ const ProfileManagement = () => {
                                                 <p className="text-xs text-slate-500">{user.email}</p>
                                             </div>
                                             <button
-                                                onClick={() => handleSelectUserForProfile(user._id)}
+                                                onClick={() => handleSelectUserForProfile(user)}
                                                 className="px-3 py-1.5 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-lg text-sm font-medium transition-colors"
                                             >
                                                 Select

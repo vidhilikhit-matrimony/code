@@ -230,17 +230,21 @@ const CreateProfile = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const adminUserId = queryParams.get('adminUserId');
+    const queryFirstName = queryParams.get('firstName');
+    const queryLastName = queryParams.get('lastName');
 
     const dispatch = useDispatch();
     const { user, sessionSeed } = useSelector((state) => state.auth);
     const confirm = useConfirm();
     const [step, setStep] = useState(1);
 
-    // Inject Redux user name into the initial form state
+    // Initial form state logic:
+    // If admin is creating the profile for a user (adminUserId present), try query parameters first, or empty if missing.
+    // Otherwise it's the normal user creating their own profile, so fallback to their login details. 
     const [formData, setFormData] = useState({
         ...INITIAL_FORM,
-        firstName: user?.firstName || '',
-        lastName: user?.lastName || ''
+        firstName: adminUserId ? (queryFirstName || '') : (user?.firstName || ''),
+        lastName: adminUserId ? (queryLastName || '') : (user?.lastName || '')
     });
     const [photoFile, setPhotoFile] = useState(null);
     const [photoPreview, setPhotoPreview] = useState(null);
@@ -585,8 +589,8 @@ const CreateProfile = () => {
         switch (step) {
             case 1: return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <FormField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required icon={User} placeholder="Enter your first name" options={{ pattern: "^[A-Za-z\\s]+$", title: "Only alphabets are allowed" }} readOnly={true} />
-                    <FormField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required icon={User} placeholder="Enter your last name" options={{ pattern: "^[A-Za-z\\s]+$", title: "Only alphabets are allowed" }} readOnly={true} />
+                    <FormField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required icon={User} placeholder="Enter your first name" options={{ pattern: "^[A-Za-z\\s]+$", title: "Only alphabets are allowed" }} readOnly={!adminUserId} />
+                    <FormField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required icon={User} placeholder="Enter your last name" options={{ pattern: "^[A-Za-z\\s]+$", title: "Only alphabets are allowed" }} readOnly={!adminUserId} />
                     <FormField label="Date of Birth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} required icon={Calendar} readOnly={isEditMode} />
                     <FormField label="Time of Birth" name="timeOfBirth" type="time" value={formData.timeOfBirth} onChange={handleChange} required icon={Calendar} />
                     <FormField label="Birthplace" name="birthPlace" value={formData.birthPlace} onChange={handleChange} required icon={MapPin} placeholder="City, State" options={{ pattern: "^[A-Za-z\\s,]+$", title: "Only alphabets are allowed" }} />

@@ -81,20 +81,21 @@ app.use(errorHandler);
 // Create admin user on startup
 const createAdminUser = async () => {
     try {
-        const existingAdmin = await User.findOne({ username: config.admin.username });
-
+        const existingAdmin = await User.findOne({ firstName: config.admin.firstName });
         if (!existingAdmin) {
             await User.create({
                 username: config.admin.username,
                 email: config.admin.email,
+                firstName: "admin",
+                lastName: "kulkarni",
                 hashedPassword: config.admin.password,
                 isVerified: true,
                 isActive: true,
                 role: 'admin'
             });
-            console.log(`✅ Admin user created: ${config.admin.username}`);
+            console.log(`✅ Admin user created: ${config.admin.firstName}`);
         } else {
-            console.log(`✅ Admin user already exists: ${config.admin.username}`);
+            console.log(`✅ Admin user already exists: ${config.admin.firstName}`);
         }
     } catch (error) {
         console.error('❌ Error creating admin user:', error.message);

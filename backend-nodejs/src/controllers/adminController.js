@@ -123,6 +123,45 @@ const getDashboardStats = async (req, res, next) => {
             }
         });
 
+        // Caste Stats Aggregation
+        const rawCasteStats = await Profile.aggregate([
+            { $match: { isDeleted: { $ne: true }, isActive: { $ne: false } } },
+            {
+                $project: {
+                    caste: { $ifNull: [ '$caste', 'Unknown' ] },
+                    genderCode: { $toLower: { $substrCP: [ '$profileCode', 3, 1 ] } }
+                }
+            },
+            {
+                $group: {
+                    _id: { caste: { $toLower: '$caste' }, gender: '$genderCode' },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const casteStatsMap = {};
+        rawCasteStats.forEach(stat => {
+            let casteName = stat._id.caste || 'unknown';
+            if (casteName !== 'unknown') {
+                casteName = casteName.charAt(0).toUpperCase() + casteName.slice(1);
+            } else {
+                casteName = 'Unknown';
+            }
+            
+            const gender = stat._id.gender === 'm' ? 'male' : (stat._id.gender === 'f' ? 'female' : 'other');
+            if (!casteStatsMap[casteName]) {
+                casteStatsMap[casteName] = { male: 0, female: 0, other: 0, total: 0 };
+            }
+            casteStatsMap[casteName][gender] += stat.count;
+            casteStatsMap[casteName].total += stat.count;
+        });
+
+        const casteStats = Object.keys(casteStatsMap).map(caste => ({
+            caste,
+            ...casteStatsMap[caste]
+        })).sort((a, b) => b.total - a.total);
+
         res.status(200).json({
             success: true,
             data: {
@@ -133,7 +172,8 @@ const getDashboardStats = async (req, res, next) => {
                 deletedAccounts,
                 subscriptionRevenue,
                 renewalRevenue,
-                totalEarned
+                totalEarned,
+                casteStats
             }
         });
     } catch (error) {
