@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 
+const S3_STATIC = import.meta.env.VITE_STATIC_S3_URL || '';
+
 const STYLES = `
 .text-saffron { color: #F05D23; }
 .bg-saffron { background-color: #F05D23; }
@@ -50,7 +52,7 @@ const AboutUs = () => {
                     <div className="w-full relative">
                         <div className="absolute inset-0 bg-primary-600 transform translate-x-4 translate-y-4 rounded-xl -z-10 opacity-20"></div>
                         <img
-                            src="/images/ceo.png"
+                            src={S3_STATIC ? `${S3_STATIC}/images/ceo.webp` : '/images/ceo.png'}
                             alt="Mr. Vasudev B. Allagikar"
                             className="rounded-xl w-full h-auto object-cover border border-[#E8E2D9] bg-[#FAF8F5]"
                         />
@@ -92,7 +94,7 @@ const AboutUs = () => {
                         <div className="bg-white p-6 rounded-xl border border-[#E8E2D9] premium-shadow border-t-4 border-t-saffron text-center">
                             <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-4 border-[#FAF8F5]">
                                 <img
-                                    src="/images/md.png"
+                                    src={S3_STATIC ? `${S3_STATIC}/images/md.webp` : '/images/md.png'}
                                     alt="Mr. Ankit Allagikar"
                                     className="w-full h-full object-cover"
                                 />
@@ -108,7 +110,7 @@ const AboutUs = () => {
                         <div className="bg-white p-6 rounded-xl border border-[#E8E2D9] premium-shadow border-t-4 border-t-gold text-center">
                             <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-4 border-[#FAF8F5]">
                                 <img
-                                    src="/images/td.png"
+                                    src={S3_STATIC ? `${S3_STATIC}/images/td.webp` : '/images/td.png'}
                                     alt="Mr. Ajeet Allagikar"
                                     className="w-full h-full object-cover"
                                 />

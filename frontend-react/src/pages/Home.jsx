@@ -22,6 +22,11 @@ import LogoImg from '../assets/vidhilikhit_logo.png';
 import HeroBgImg from '../assets/hero_wedding.png';
 import FooterBgImg from '../assets/footer_bg.png';
 
+// ─── S3 Static Assets Base URL ─────────────────────────────────────
+// After running `node scripts/upload-static-to-s3.js`, set this env var
+// to serve hero/static images from S3 instead of EC2.
+const S3_STATIC = import.meta.env.VITE_STATIC_S3_URL || '';
+
 // ─── Animation Variants ─────────────────────────────────────────
 
 const fadeInUp = {
@@ -580,13 +585,19 @@ const Home = () => {
                         allowTouchMove={false}
                         className="w-full h-full"
                     >
-                        {[
+                        {(S3_STATIC ? [
+                            `${S3_STATIC}/hero/hero_background_1_1772572844785.webp`,
+                            `${S3_STATIC}/hero/vidhi_hero_1_1772573568582.webp`,
+                            `${S3_STATIC}/hero/vidhi_hero_3_1772573596985.webp`,
+                            `${S3_STATIC}/hero/wedding_bg_1_1772574128889.webp`,
+                            `${S3_STATIC}/hero/hero_background_2_1772572866107.webp`
+                        ] : [
                             '/assets/hero/hero_background_1_1772572844785.png',
                             '/assets/hero/vidhi_hero_1_1772573568582.png',
                             '/assets/hero/vidhi_hero_3_1772573596985.png',
                             '/assets/hero/wedding_bg_1_1772574128889.png',
                             '/assets/hero/hero_background_2_1772572866107.png'
-                        ].map((src, i) => (
+                        ]).map((src, i) => (
                             <SwiperSlide key={i} className="w-full h-full">
                                 <img
                                     src={src}

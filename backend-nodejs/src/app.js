@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const connectDB = require('./config/database');
 const config = require('./config/env');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -22,6 +23,31 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ─── Static File Serving with Cache Headers ──────────────────────
+// Serve frontend build with aggressive caching (30 days)
+// Vite adds content-hash to filenames so cache busting is automatic
+app.use(express.static(path.join(__dirname, '../../frontend-react/dist'), {
+    maxAge: '30d',
+    etag: true,
+    lastModified: true,
+    immutable: true  // Vite hashed filenames never change
+}));
+
+// Cache control for API responses
+app.use('/api', (req, res, next) => {
+    if (req.method === 'GET') {
+        // Cache profile listings for 2 minutes (reduces redundant fetches)
+        if (req.path === '/profiles') {
+            res.set('Cache-Control', 'private, max-age=120');
+        }
+        // Cache visitor count for 5 minutes
+        if (req.path === '/visitors') {
+            res.set('Cache-Control', 'public, max-age=300');
+        }
+    }
+    next();
+});
 
 // Request logging middleware (development)
 if (config.nodeEnv === 'development') {
