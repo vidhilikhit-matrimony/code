@@ -9,8 +9,12 @@ const {
     getProfileById,
     getUnlockedProfiles,
     unlockProfile,
-    deleteProfile
+    deleteProfile,
+    getPublicStats
 } = require('../controllers/profileController');
+
+// GET /api/profiles/stats/public — public
+router.get('/stats/public', getPublicStats);
 
 // GET /api/profiles/me — requires auth (must be before /:id)
 router.get('/me', authenticate, getMyProfile);

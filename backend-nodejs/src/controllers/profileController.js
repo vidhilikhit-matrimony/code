@@ -897,6 +897,31 @@ const deleteProfile = async (req, res, next) => {
     }
 };
 
+/**
+ * Get public profile stats
+ * GET /api/profiles/stats/public
+ */
+const getPublicStats = async (req, res, next) => {
+    try {
+        const query = { isPublished: true, isActive: { $ne: false }, isDeleted: { $ne: true } };
+
+        const total = await Profile.countDocuments(query);
+        const male = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}m', $options: 'i' } });
+        const female = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}f', $options: 'i' } });
+
+        res.json({
+            success: true,
+            data: {
+                total,
+                male,
+                female
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createOrUpdateProfile,
     getMyProfile,
@@ -904,5 +929,6 @@ module.exports = {
     getUnlockedProfiles,
     getProfileById,
     unlockProfile,
-    deleteProfile
+    deleteProfile,
+    getPublicStats
 };

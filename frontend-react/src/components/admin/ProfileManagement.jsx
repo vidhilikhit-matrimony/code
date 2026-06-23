@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle, UserPlus, X, Power, Gift, AlertTriangle } from 'lucide-react';
+import { Search, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle, XCircle, UserPlus, X, Power, Gift, AlertTriangle, Edit } from 'lucide-react';
 import { useConfirm } from '../ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -523,6 +523,13 @@ const ProfileManagement = () => {
                                                         <Power className="w-4 h-4" />
                                                     )}
                                                 </button>
+                                                <Link
+                                                    to={`/create-profile?adminUserId=${profile.userId?._id || profile.userId}&firstName=${encodeURIComponent(profile.firstName || '')}&lastName=${encodeURIComponent(profile.lastName || '')}`}
+                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                                                    title="Edit Profile"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </Link>
                                                 <Link
                                                     to={`/profile/${profile._id}`}
                                                     className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"

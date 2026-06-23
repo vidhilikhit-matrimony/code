@@ -59,9 +59,10 @@ function createImage(url) {
 }
 
 // ─── Modal Component ─────────────────────────────────────────────
-const ImageCropModal = ({ imageSrc, fileName, onConfirm, onCancel }) => {
+const ImageCropModal = ({ imageSrc, fileName, onConfirm, onCancel, aspectRatio = 1, allowRatioSelection = false }) => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
+    const [currentAspectRatio, setCurrentAspectRatio] = useState(aspectRatio);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -84,7 +85,7 @@ const ImageCropModal = ({ imageSrc, fileName, onConfirm, onCancel }) => {
 
     return (
         // Backdrop
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[110] flex flex-col bg-black/90 backdrop-blur-sm">
 
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-slate-900/80 border-b border-slate-700">
@@ -104,7 +105,7 @@ const ImageCropModal = ({ imageSrc, fileName, onConfirm, onCancel }) => {
                     image={imageSrc}
                     crop={crop}
                     zoom={zoom}
-                    aspect={1}
+                    aspect={currentAspectRatio}
                     onCropChange={setCrop}
                     onZoomChange={setZoom}
                     onCropComplete={onCropComplete}
@@ -118,25 +119,41 @@ const ImageCropModal = ({ imageSrc, fileName, onConfirm, onCancel }) => {
                 />
             </div>
 
-            {/* Zoom Slider + Action Buttons */}
-            <div className="px-5 py-4 bg-slate-900/80 border-t border-slate-700 flex flex-col gap-3">
-                {/* Zoom control */}
-                <div className="flex items-center gap-3">
-                    <ZoomOut className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                    <input
-                        type="range"
-                        min={1}
-                        max={3}
-                        step={0.01}
-                        value={zoom}
-                        onChange={(e) => setZoom(Number(e.target.value))}
-                        className="w-full accent-primary-500 cursor-pointer"
-                    />
-                    <ZoomIn className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            {/* Zoom Slider, Aspect Ratio + Action Buttons */}
+            <div className="px-5 py-4 bg-slate-900/80 border-t border-slate-700 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto flex-1">
+                    {/* Zoom control */}
+                    <div className="flex items-center gap-3 w-full sm:w-48">
+                        <ZoomOut className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <input
+                            type="range"
+                            min={1}
+                            max={3}
+                            step={0.01}
+                            value={zoom}
+                            onChange={(e) => setZoom(Number(e.target.value))}
+                            className="w-full accent-primary-500 cursor-pointer"
+                        />
+                        <ZoomIn className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    </div>
+
+                    {/* Aspect Ratio Selection */}
+                    {allowRatioSelection && (
+                        <select
+                            value={currentAspectRatio}
+                            onChange={(e) => setCurrentAspectRatio(Number(e.target.value))}
+                            className="w-full sm:w-auto px-3 py-1.5 bg-slate-800 text-white text-sm border border-slate-600 rounded-lg outline-none focus:border-primary-500 transition-colors"
+                        >
+                            <option value={1}>1:1 (Square)</option>
+                            <option value={3/4}>3:4 (Portrait)</option>
+                            <option value={4/3}>4:3 (Landscape)</option>
+                            <option value={16/9}>16:9 (Widescreen)</option>
+                        </select>
+                    )}
                 </div>
 
                 {/* Buttons */}
-                <div className="flex gap-3 justify-end">
+                <div className="flex gap-3 w-full sm:w-auto justify-end">
                     <button
                         onClick={onCancel}
                         className="btn btn-outline text-sm flex items-center gap-2"

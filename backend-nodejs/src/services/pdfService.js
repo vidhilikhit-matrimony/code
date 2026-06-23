@@ -290,7 +290,7 @@ const generatePublicProfilesHtml = (profiles, community, gender) => {
         return `
             <tr>
                 <td>${index + 1}</td>
-                <td><strong>${p.firstName || ''}</strong></td>
+                <td><strong>${p.firstName || ''}</strong><br><span style="color: #666; font-size: 10px;">ID: ${p.profileCode || 'N/A'}</span></td>
                 <td style="white-space: pre-line;">${dobTime}</td>
                 <td style="white-space: pre-line;">${astro}</td>
                 <td style="white-space: pre-line;">${prof}</td>
@@ -348,7 +348,7 @@ const generatePublicProfilesHtml = (profiles, community, gender) => {
             <thead>
                 <tr>
                     <th style="width: 5%;">Sr.</th>
-                    <th style="width: 15%;">First Name</th>
+                    <th style="width: 15%;">Name & ID</th>
                     <th style="width: 20%;">DOB, Time, Age & Height</th>
                     <th style="width: 20%;">Gotra, Rashi, Nakshatra, Nadi</th>
                     <th style="width: 20%;">Edu, Occ & Income</th>
@@ -455,7 +455,7 @@ const generateAdminProfilesHtml = (profiles, community, gender) => {
         return `
             <tr>
                 <td>${index + 1}</td>
-                <td><strong>${p.firstName || ''}</strong></td>
+                <td><strong>${p.firstName || ''}</strong><br><span style="color: #666; font-size: 10px;">ID: ${p.profileCode || 'N/A'}</span></td>
                 <td style="white-space: pre-line;">${dobTime}</td>
                 <td style="white-space: pre-line;">${astro}</td>
                 <td style="white-space: pre-line;">${prof}</td>
@@ -520,7 +520,7 @@ const generateAdminProfilesHtml = (profiles, community, gender) => {
             <thead>
                 <tr>
                     <th style="width: 5%;">Sr.</th>
-                    <th style="width: 15%;">First Name</th>
+                    <th style="width: 15%;">Name & ID</th>
                     <th style="width: 16%;">DOB, Time, Age & Height</th>
                     <th style="width: 16%;">Gotra, Rashi, Nakshatra, Nadi</th>
                     <th style="width: 16%;">Edu, Occ & Income</th>

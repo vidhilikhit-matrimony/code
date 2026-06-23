@@ -12,7 +12,7 @@ import {
     Heart, Users, Shield, Star, Phone, Mail, FileDown,
     LogOut, Edit3, ChevronRight, ChevronLeft, MapPin, Award,
     LayoutDashboard, Search, Fingerprint, Activity,
-    Sunrise, LogIn, LockOpen, Menu, X, Eye
+    Sunrise, LogIn, LockOpen, Menu, X, Eye, ShoppingCart, Globe, BookOpen
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 
@@ -349,6 +349,90 @@ function DownloadModal({ isOpen, onClose }) {
     );
 }
 
+// ─── Book Banner Component ───────────────────────────────────────
+function BookBanner() {
+    return (
+        <section className="relative py-24 bg-gradient-to-br from-[#9A031E] via-primary-700 to-[#e24e1b] text-white overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1544377193-33dcf4d68fb5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] opacity-10 mix-blend-overlay object-cover"></div>
+            
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                    {/* Book Mockup */}
+                    <motion.div 
+                        initial="hidden" whileInView="visible" viewport={{ once: true }} variants={scaleIn}
+                        className="w-full lg:w-1/2 flex justify-center perspective-[1000px] group order-2 lg:order-1"
+                    >
+                        <div className="relative w-full max-w-xl rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.5)] transform lg:rotate-y-[-5deg] group-hover:rotate-y-0 group-hover:scale-105 transition-all duration-700 overflow-hidden cursor-pointer bg-white border-4 border-white/10">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/20 z-10 pointer-events-none mix-blend-overlay"></div>
+                            {/* Image source fetches from S3 bucket if VITE_STATIC_S3_URL is set, else local folder */}
+                            <img 
+                                src={S3_STATIC ? `${S3_STATIC}/assets/vidhilikhit_book_cover.webp` : '/assets/vidhilikhit_book_cover.jpg'}
+                                alt="Vidhilikhit Book" 
+                                className="w-full h-auto object-contain transition-transform duration-700" 
+                                onError={(e) => { 
+                                    e.target.src = 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'; 
+                                    e.target.onerror = null; 
+                                }} 
+                            />
+                        </div>
+                    </motion.div>
+
+                    {/* Content */}
+                    <motion.div 
+                        initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
+                        className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left order-1 lg:order-2"
+                    >
+                        <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs uppercase tracking-widest mb-6 border border-amber-500/30 backdrop-blur-sm shadow-inner">
+                            <BookOpen className="w-4 h-4" /> Highly Recommended Reading
+                        </motion.div>
+                        
+                        <motion.h2 variants={fadeInUp} className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif mb-4 leading-tight drop-shadow-lg">
+                            <span className="text-amber-400">Remarriage Vidhilikhit:</span> <br />
+                            <span className="text-3xl sm:text-4xl lg:text-5xl text-white">Marriage : The Combine Journey</span>
+                        </motion.h2>
+
+                        <motion.div variants={fadeInUp} className="space-y-4 text-white/90 font-medium mb-10 max-w-2xl text-lg lg:text-xl drop-shadow-md">
+                            <p className="flex items-start gap-4 justify-center md:justify-start">
+                                <span className="w-2 h-2 rounded-full bg-amber-400 mt-2.5 shrink-0 shadow-[0_0_10px_rgba(251,191,36,0.8)]"></span>
+                                Separated / Divorce : Problems, Issues & Solutions
+                            </p>
+                            <p className="flex items-start gap-4 justify-center md:justify-start">
+                                <span className="w-2 h-2 rounded-full bg-amber-400 mt-2.5 shrink-0 shadow-[0_0_10px_rgba(251,191,36,0.8)]"></span>
+                                Widow / Widower : Helping Hand & Solutions
+                            </p>
+                            <p className="flex items-start gap-4 justify-center md:justify-start">
+                                <span className="w-2 h-2 rounded-full bg-amber-400 mt-2.5 shrink-0 shadow-[0_0_10px_rgba(251,191,36,0.8)]"></span>
+                                For All Caste
+                            </p>
+                        </motion.div>
+                        
+                        <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-5 w-full justify-center md:justify-start">
+                            <a 
+                                href="https://amzn.in/d/09MuwwCa" 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="group flex items-center justify-center gap-3 px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-extrabold rounded-full shadow-[0_10px_30px_rgba(245,158,11,0.4)] hover:shadow-[0_15px_40px_rgba(245,158,11,0.6)] hover:-translate-y-1 transition-all duration-300"
+                            >
+                                <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                Buy on Amazon
+                            </a>
+                            <a 
+                                href="https://remarriage.vidhilikhit.com/" 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="group flex items-center justify-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-extrabold rounded-full backdrop-blur-md border border-white/30 shadow-[0_10px_30px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300"
+                            >
+                                <Globe className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                Visit Remarriage Portal
+                            </a>
+                        </motion.div>
+                    </motion.div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
 // ─── Main Component ──────────────────────────────────────────────
 
 const Home = () => {
@@ -360,6 +444,19 @@ const Home = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [visitorCount, setVisitorCount] = useState(null);
+    const [profileStats, setProfileStats] = useState({ total: 0, male: 0, female: 0 });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                const res = await fetch(`${API_BASE}/profiles/stats/public`);
+                const data = await res.json();
+                if (data.success) setProfileStats(data.data);
+            } catch { /* silently ignore */ }
+        };
+        fetchStats();
+    }, []);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -430,6 +527,7 @@ const Home = () => {
                                 <button onClick={() => navigate('/about-us')} className="hover:text-primary-600 transition-colors">About</button>
                                 <button onClick={() => navigate('/contact-us')} className="hover:text-primary-600 transition-colors">Contact</button>
                                 <button onClick={() => navigate('/help-faq')} className="hover:text-primary-600 transition-colors">FAQ</button>
+                                <button onClick={() => navigate('/gallery')} className="hover:text-primary-600 transition-colors">Gallery</button>
                             </nav>
 
                             <div className="w-px h-6 bg-slate-200"></div>
@@ -526,6 +624,7 @@ const Home = () => {
                                 </div>
                                 <button onClick={() => navigate('/contact-us')} className="block w-full text-left font-bold text-slate-600 py-2">Contact Us</button>
                                 <button onClick={() => navigate('/help-faq')} className="block w-full text-left font-bold text-slate-600 py-2">Help / FAQ</button>
+                                <button onClick={() => navigate('/gallery')} className="block w-full text-left font-bold text-slate-600 py-2">Gallery</button>
 
                                 <hr className="border-slate-100 my-4" />
 
@@ -648,16 +747,22 @@ const Home = () => {
 
                         <motion.div variants={fadeInUp} className="grid grid-cols-3 gap-8 pt-12 mt-12 border-t border-white/10">
                             <div>
-                                <h4 className="text-white font-serif font-bold text-3xl sm:text-4xl">10K+</h4>
+                                <h4 className="text-white font-serif font-bold text-3xl sm:text-4xl">
+                                    {profileStats.total > 0 ? profileStats.total.toLocaleString() : '10K+'}
+                                </h4>
                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-2">Verified Profiles</p>
                             </div>
                             <div>
-                                <h4 className="text-amber-400 font-serif font-bold text-3xl sm:text-4xl">400+</h4>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-2">Happy Marriages</p>
+                                <h4 className="text-amber-400 font-serif font-bold text-3xl sm:text-4xl">
+                                    {profileStats.total > 0 ? profileStats.female.toLocaleString() : '5K+'}
+                                </h4>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-2">Brides</p>
                             </div>
                             <div>
-                                <h4 className="text-white font-serif font-bold text-3xl sm:text-4xl">2017</h4>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-2">Established</p>
+                                <h4 className="text-white font-serif font-bold text-3xl sm:text-4xl">
+                                    {profileStats.total > 0 ? profileStats.male.toLocaleString() : '5K+'}
+                                </h4>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-2">Grooms</p>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -676,7 +781,10 @@ const Home = () => {
             {/* 2. ── EXPLORE PROFILE CARDS ── */}
             <SuitableMatchesGrid onViewMore={() => navigate('/profiles')} />
 
-            {/* 3. ── DOWNLOAD PDF BANNER ── */}
+            {/* 3. ── BOOK ADVERTISEMENT BANNER ── */}
+            <BookBanner />
+
+            {/* 4. ── DOWNLOAD PDF BANNER ── */}
             <section className="py-24 bg-gradient-to-br from-slate-900 to-primary-600 text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] opacity-10 mix-blend-overlay object-cover"></div>
 

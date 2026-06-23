@@ -22,6 +22,7 @@ import ContactUs from '../pages/ContactUs';
 import HelpFaq from '../pages/HelpFaq';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import TermsOfService from '../pages/TermsOfService';
+import Gallery from '../pages/Gallery';
 import SubscriptionWarningModal from '../components/SubscriptionWarningModal';
 
 // Protected Route Component
@@ -141,6 +142,7 @@ const AppRouter = () => {
         <Route path="/help-faq" element={<HelpFaq />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/gallery" element={<Gallery />} />
 
         {/* Auth Routes */}
         <Route

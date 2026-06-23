@@ -591,7 +591,7 @@ const CreateProfile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <FormField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required icon={User} placeholder="Enter your first name" options={{ pattern: "^[A-Za-z\\s]+$", title: "Only alphabets are allowed" }} readOnly={!adminUserId} />
                     <FormField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required icon={User} placeholder="Enter your last name" options={{ pattern: "^[A-Za-z\\s]+$", title: "Only alphabets are allowed" }} readOnly={!adminUserId} />
-                    <FormField label="Date of Birth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} required icon={Calendar} readOnly={isEditMode} />
+                    <FormField label="Date of Birth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} required icon={Calendar} readOnly={isEditMode && !adminUserId} />
                     <FormField label="Time of Birth" name="timeOfBirth" type="time" value={formData.timeOfBirth} onChange={handleChange} required icon={Calendar} />
                     <FormField label="Birthplace" name="birthPlace" value={formData.birthPlace} onChange={handleChange} required icon={MapPin} placeholder="City, State" options={{ pattern: "^[A-Za-z\\s,]+$", title: "Only alphabets are allowed" }} />
                     <FormField label="Gender" name="gender" type="select" value={formData.gender} onChange={handleChange} required icon={User}

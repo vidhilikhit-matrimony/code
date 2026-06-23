@@ -1,0 +1,164 @@
+{
+  "hero_background_1_1772572844785.png": {
+    "s3Key": "static/hero/hero_background_1_1772572844785.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/hero_background_1_1772572844785.webp",
+    "originalSize": 478114,
+    "compressedSize": 42520
+  },
+  "hero_background_2_1772572866107.png": {
+    "s3Key": "static/hero/hero_background_2_1772572866107.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/hero_background_2_1772572866107.webp",
+    "originalSize": 785573,
+    "compressedSize": 93714
+  },
+  "hero_background_3_1772572889934.png": {
+    "s3Key": "static/hero/hero_background_3_1772572889934.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/hero_background_3_1772572889934.webp",
+    "originalSize": 619873,
+    "compressedSize": 48014
+  },
+  "media__1772562045944.png": {
+    "s3Key": "static/hero/media__1772562045944.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/media__1772562045944.webp",
+    "originalSize": 56126,
+    "compressedSize": 17032
+  },
+  "media__1772572275260.png": {
+    "s3Key": "static/hero/media__1772572275260.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/media__1772572275260.webp",
+    "originalSize": 440649,
+    "compressedSize": 37830
+  },
+  "media__1772572275291.png": {
+    "s3Key": "static/hero/media__1772572275291.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/media__1772572275291.webp",
+    "originalSize": 426275,
+    "compressedSize": 33864
+  },
+  "media__1772572275374.png": {
+    "s3Key": "static/hero/media__1772572275374.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/media__1772572275374.webp",
+    "originalSize": 430005,
+    "compressedSize": 34582
+  },
+  "media__1772572275413.png": {
+    "s3Key": "static/hero/media__1772572275413.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/media__1772572275413.webp",
+    "originalSize": 430969,
+    "compressedSize": 35880
+  },
+  "media__1772572275433.png": {
+    "s3Key": "static/hero/media__1772572275433.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/media__1772572275433.webp",
+    "originalSize": 430036,
+    "compressedSize": 34934
+  },
+  "vidhi_hero_1_1772573568582.png": {
+    "s3Key": "static/hero/vidhi_hero_1_1772573568582.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_1_1772573568582.webp",
+    "originalSize": 665795,
+    "compressedSize": 59362
+  },
+  "vidhi_hero_2_1772573581237.png": {
+    "s3Key": "static/hero/vidhi_hero_2_1772573581237.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_2_1772573581237.webp",
+    "originalSize": 683826,
+    "compressedSize": 62972
+  },
+  "vidhi_hero_3_1772573596985.png": {
+    "s3Key": "static/hero/vidhi_hero_3_1772573596985.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_3_1772573596985.webp",
+    "originalSize": 633466,
+    "compressedSize": 50188
+  },
+  "vidhi_hero_4_1772573612109.png": {
+    "s3Key": "static/hero/vidhi_hero_4_1772573612109.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_4_1772573612109.webp",
+    "originalSize": 611126,
+    "compressedSize": 47704
+  },
+  "vidhi_hero_5_1772573641312.png": {
+    "s3Key": "static/hero/vidhi_hero_5_1772573641312.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_5_1772573641312.webp",
+    "originalSize": 589301,
+    "compressedSize": 54812
+  },
+  "vidhi_hero_6_1772573655227.png": {
+    "s3Key": "static/hero/vidhi_hero_6_1772573655227.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_6_1772573655227.webp",
+    "originalSize": 662159,
+    "compressedSize": 63868
+  },
+  "vidhi_hero_7_1772573668244.png": {
+    "s3Key": "static/hero/vidhi_hero_7_1772573668244.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_7_1772573668244.webp",
+    "originalSize": 659631,
+    "compressedSize": 57448
+  },
+  "vidhi_hero_8_1772573695364.png": {
+    "s3Key": "static/hero/vidhi_hero_8_1772573695364.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_8_1772573695364.webp",
+    "originalSize": 487821,
+    "compressedSize": 23610
+  },
+  "vidhi_hero_9_1772573710550.png": {
+    "s3Key": "static/hero/vidhi_hero_9_1772573710550.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/vidhi_hero_9_1772573710550.webp",
+    "originalSize": 651541,
+    "compressedSize": 56336
+  },
+  "wedding_bg_1_1772574128889.png": {
+    "s3Key": "static/hero/wedding_bg_1_1772574128889.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/hero/wedding_bg_1_1772574128889.webp",
+    "originalSize": 566602,
+    "compressedSize": 46020
+  },
+  "ceo.png": {
+    "s3Key": "static/images/ceo.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/images/ceo.webp",
+    "originalSize": 612251,
+    "compressedSize": 23856
+  },
+  "md.png": {
+    "s3Key": "static/images/md.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/images/md.webp",
+    "originalSize": 228594,
+    "compressedSize": 7826
+  },
+  "td.png": {
+    "s3Key": "static/images/td.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/images/td.webp",
+    "originalSize": 216435,
+    "compressedSize": 6280
+  },
+  "footer_bg.png": {
+    "s3Key": "static/assets/footer_bg.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/assets/footer_bg.webp",
+    "originalSize": 488193,
+    "compressedSize": 25724
+  },
+  "hero_wedding.png": {
+    "s3Key": "static/assets/hero_wedding.jpg",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/assets/hero_wedding.jpg",
+    "originalSize": 807553,
+    "compressedSize": 96834
+  },
+  "payment-qr.jpeg": {
+    "s3Key": "static/assets/payment-qr.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/assets/payment-qr.webp",
+    "originalSize": 173801,
+    "compressedSize": 29606
+  },
+  "vidhilikhit_book_cover.jpg": {
+    "s3Key": "static/assets/vidhilikhit_book_cover.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/assets/vidhilikhit_book_cover.webp",
+    "originalSize": 187873,
+    "compressedSize": 81500
+  },
+  "vidhilikhit_logo.png": {
+    "s3Key": "static/assets/vidhilikhit_logo.webp",
+    "s3Url": "https://matrimony-profile-image.s3.ap-south-1.amazonaws.com/static/assets/vidhilikhit_logo.webp",
+    "originalSize": 376322,
+    "compressedSize": 20288
+  }
+}
