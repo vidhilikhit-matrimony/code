@@ -35,13 +35,11 @@ const subscriptionSchema = new mongoose.Schema({
         default: 0
     },
     validFrom: {
-        type: Date,
-        required: true
+        type: Date
     },
     validTo: {
         type: Date,
-        required: true,
-        index: true  // For expiration queries
+        index: true  // For expiration queries (now deprecated)
     },
     status: {
         type: String,
@@ -63,12 +61,9 @@ subscriptionSchema.index({ token: 1, status: 1 });
 
 // Check if subscription is valid
 subscriptionSchema.methods.isValid = function () {
-    const now = new Date();
     return (
         this.status === 'active' &&
-        this.remainingViews > 0 &&
-        this.validFrom <= now &&
-        this.validTo >= now
+        this.remainingViews > 0
     );
 };
 

@@ -38,6 +38,12 @@ const FILTER_CONFIG = {
             { value: 'India', label: 'India' },
             { value: 'NRI', label: 'NRI (Abroad)' }
         ]
+    },
+    createdInLast15Days: {
+        label: 'Joined',
+        options: [
+            { value: 'true', label: 'Created in last 15 days' }
+        ]
     }
 };
 
@@ -331,7 +337,8 @@ const getInitialFilters = () => {
         ageMin: '',
         ageMax: '',
         maritalStatus: '',
-        workingPlace: ''
+        workingPlace: '',
+        createdInLast15Days: ''
     };
 };
 
@@ -431,7 +438,8 @@ const Profiles = () => {
             ageMin: '',
             ageMax: '',
             maritalStatus: '',
-            workingPlace: ''
+            workingPlace: '',
+            createdInLast15Days: ''
         });
         setPage(1);
     };

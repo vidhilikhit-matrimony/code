@@ -160,6 +160,13 @@ const buildFilterQuery = (query, currentUserId) => {
         }
     }
 
+    // Created in last 15 days
+    if (query.createdInLast15Days === 'true') {
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        filter.createdAt = { $gte: fifteenDaysAgo };
+    }
+
     return filter;
 };
 
