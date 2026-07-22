@@ -833,7 +833,7 @@ const unlockProfile = async (req, res, next) => {
 };
 
 /**
- * Delete profile (Soft delete for user, Hard delete for admin)
+ * Delete profile
  * DELETE /api/profiles/:id
  */
 const deleteProfile = async (req, res, next) => {
@@ -850,7 +850,7 @@ const deleteProfile = async (req, res, next) => {
         const isAdmin = req.user.role === 'admin';
         const isOwner = profile.userId.toString() === req.user._id.toString();
 
-        console.log(`[DELETE PROFILE] User: ${req.user.username}, Role: ${req.user.role}, IsAdmin: ${isAdmin}, IsOwner: ${isOwner}`);
+        console.log(`[DELETE PROFILE & ACCOUNT] Requester ID: ${req.user._id}, Role: ${req.user.role}, IsAdmin: ${isAdmin}, IsOwner: ${isOwner}`);
 
         if (!isOwner && !isAdmin) {
             return res.status(403).json({
@@ -861,43 +861,34 @@ const deleteProfile = async (req, res, next) => {
 
         const { deleteFromS3 } = require('../services/uploadService');
 
-        if (isAdmin) {
-            console.log('[DELETE PROFILE] Performing hard delete (Admin)');
-            // Hard Delete
-            // 1. Delete photos from S3
-            if (profile.photos && profile.photos.length > 0) {
-                for (const photo of profile.photos) {
-                    try {
-                        await deleteFromS3(photo.url);
-                    } catch (err) {
-                        console.error(`[DELETE PROFILE] Failed to delete photo ${photo.url}:`, err.message);
-                    }
+        // 1. Delete photos from S3
+        if (profile.photos && profile.photos.length > 0) {
+            for (const photo of profile.photos) {
+                try {
+                    await deleteFromS3(photo.url);
+                } catch (err) {
+                    console.error(`[DELETE PROFILE] Failed to delete photo ${photo.url}:`, err.message);
                 }
             }
-
-            // 2. Delete from DB
-            await Profile.findByIdAndDelete(req.params.id);
-
-            // 3. Clean up related data (optional: remove views, etc. if needed)
-
-            return res.json({
-                success: true,
-                message: 'Profile permanently deleted'
-            });
-
-        } else {
-            // Soft Delete
-            profile.isDeleted = true;
-            profile.isActive = false;
-            profile.deletedAt = new Date();
-            profile.inactiveDate = new Date();
-            await profile.save();
-
-            return res.json({
-                success: true,
-                message: 'Profile deactivated successfully'
-            });
         }
+
+        // 2. Delete Profile from DB
+        await Profile.findByIdAndDelete(req.params.id);
+
+        // 3. Delete corresponding User account and related collections
+        const userId = profile.userId;
+        if (userId) {
+            const { User, Subscription, SubscriptionPayment, ProfileView } = require('../models');
+            await User.findByIdAndDelete(userId);
+            await Subscription.deleteMany({ userId });
+            await SubscriptionPayment.deleteMany({ userId });
+            await ProfileView.deleteMany({ $or: [{ userId }, { profileId: req.params.id }] });
+        }
+
+        return res.json({
+            success: true,
+            message: 'Account and profile permanently deleted'
+        });
 
     } catch (error) {
         next(error);
@@ -913,15 +904,19 @@ const getPublicStats = async (req, res, next) => {
         const query = { isPublished: true, isActive: { $ne: false }, isDeleted: { $ne: true } };
 
         const total = await Profile.countDocuments(query);
-        const male = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}m', $options: 'i' } });
-        const female = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}f', $options: 'i' } });
+        const maleBrahmin = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}m', $options: 'i' }, caste: 'Brahmin' });
+        const maleLingayat = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}m', $options: 'i' }, caste: 'Lingayat' });
+        const femaleBrahmin = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}f', $options: 'i' }, caste: 'Brahmin' });
+        const femaleLingayat = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}f', $options: 'i' }, caste: 'Lingayat' });
 
         res.json({
             success: true,
             data: {
                 total,
-                male,
-                female
+                maleBrahmin,
+                maleLingayat,
+                femaleBrahmin,
+                femaleLingayat
             }
         });
     } catch (error) {

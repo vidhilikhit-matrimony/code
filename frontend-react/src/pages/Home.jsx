@@ -444,7 +444,7 @@ const Home = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [visitorCount, setVisitorCount] = useState(null);
-    const [profileStats, setProfileStats] = useState({ total: 0, male: 0, female: 0 });
+    const [profileStats, setProfileStats] = useState({ total: 0, maleBrahmin: 0, maleLingayat: 0, femaleBrahmin: 0, femaleLingayat: 0 });
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -745,24 +745,36 @@ const Home = () => {
                             )}
                         </motion.div>
 
-                        <motion.div variants={fadeInUp} className="grid grid-cols-3 gap-8 pt-12 mt-12 border-t border-white/10">
-                            <div>
-                                <h4 className="text-white font-serif font-bold text-3xl sm:text-4xl">
+                        <motion.div variants={fadeInUp} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 pt-12 mt-12 border-t border-white/10">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl hover:bg-white/10 transition-all">
+                                <h4 className="text-white font-serif font-bold text-2xl sm:text-3xl">
                                     {profileStats.total > 0 ? profileStats.total.toLocaleString() : '10K+'}
                                 </h4>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-2">Verified Profiles</p>
+                                <p className="text-[10px] text-slate-300 uppercase tracking-widest font-bold mt-2">Total</p>
                             </div>
-                            <div>
-                                <h4 className="text-amber-400 font-serif font-bold text-3xl sm:text-4xl">
-                                    {profileStats.total > 0 ? profileStats.female.toLocaleString() : '5K+'}
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl hover:bg-white/10 transition-all">
+                                <h4 className="text-amber-400 font-serif font-bold text-2xl sm:text-3xl">
+                                    {profileStats.total > 0 ? profileStats.maleBrahmin.toLocaleString() : '2K+'}
                                 </h4>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-2">Brides</p>
+                                <p className="text-[10px] text-slate-300 uppercase tracking-widest font-bold mt-2">Male Brahmin</p>
                             </div>
-                            <div>
-                                <h4 className="text-white font-serif font-bold text-3xl sm:text-4xl">
-                                    {profileStats.total > 0 ? profileStats.male.toLocaleString() : '5K+'}
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl hover:bg-white/10 transition-all">
+                                <h4 className="text-white font-serif font-bold text-2xl sm:text-3xl">
+                                    {profileStats.total > 0 ? profileStats.maleLingayat.toLocaleString() : '3K+'}
                                 </h4>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-2">Grooms</p>
+                                <p className="text-[10px] text-slate-300 uppercase tracking-widest font-bold mt-2">Male Lingayat</p>
+                            </div>
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl hover:bg-white/10 transition-all">
+                                <h4 className="text-amber-400 font-serif font-bold text-2xl sm:text-3xl">
+                                    {profileStats.total > 0 ? profileStats.femaleBrahmin.toLocaleString() : '2K+'}
+                                </h4>
+                                <p className="text-[10px] text-slate-300 uppercase tracking-widest font-bold mt-2">Female Brahmin</p>
+                            </div>
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl hover:bg-white/10 transition-all">
+                                <h4 className="text-white font-serif font-bold text-2xl sm:text-3xl">
+                                    {profileStats.total > 0 ? profileStats.femaleLingayat.toLocaleString() : '3K+'}
+                                </h4>
+                                <p className="text-[10px] text-slate-300 uppercase tracking-widest font-bold mt-2">Female Lingayat</p>
                             </div>
                         </motion.div>
                     </motion.div>

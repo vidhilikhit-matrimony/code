@@ -24,14 +24,7 @@ const FILTER_CONFIG = {
             { value: 'Female', label: 'Female' }
         ]
     },
-    maritalStatus: {
-        label: 'Marital Status',
-        options: [
-            { value: 'unmarried', label: 'Unmarried' },
-            { value: 'divorced', label: 'Divorced' },
-            { value: 'widow', label: 'Widow / Widower' }
-        ]
-    },
+
     country: {
         label: 'Location',
         options: [
@@ -157,6 +150,69 @@ const ProfileCard = ({ profile, onClick }) => {
 const FilterSidebar = ({ filters, onChange, onClear, isMobileOpen, onMobileClose }) => {
     const activeCount = Object.values(filters).filter(v => v).length;
 
+    const [minAgeInput, setMinAgeInput] = useState(filters.ageMin || '');
+    const [maxAgeInput, setMaxAgeInput] = useState(filters.ageMax || '');
+
+    useEffect(() => {
+        setMinAgeInput(filters.ageMin || '');
+    }, [filters.ageMin]);
+
+    useEffect(() => {
+        setMaxAgeInput(filters.ageMax || '');
+    }, [filters.ageMax]);
+
+    const handleMinAgeBlur = () => {
+        const val = minAgeInput.toString().trim();
+        if (val !== '') {
+            const num = parseInt(val, 10);
+            if (isNaN(num) || num < 18) {
+                onChange('ageMin', 18);
+                setMinAgeInput('18');
+                toast.error('Minimum age must be 18 or above');
+            } else if (filters.ageMax && num > parseInt(filters.ageMax, 10)) {
+                onChange('ageMin', filters.ageMax);
+                setMinAgeInput(filters.ageMax);
+                toast.error('Min age cannot exceed Max age');
+            } else {
+                onChange('ageMin', num);
+            }
+        } else {
+            onChange('ageMin', '');
+        }
+    };
+
+    const handleMaxAgeBlur = () => {
+        const val = maxAgeInput.toString().trim();
+        if (val !== '') {
+            const num = parseInt(val, 10);
+            if (isNaN(num) || num < 18) {
+                onChange('ageMax', 18);
+                setMaxAgeInput('18');
+                toast.error('Maximum age must be 18 or above');
+            } else if (filters.ageMin && num < parseInt(filters.ageMin, 10)) {
+                onChange('ageMax', filters.ageMin);
+                setMaxAgeInput(filters.ageMin);
+                toast.error('Max age cannot be less than Min age');
+            } else {
+                onChange('ageMax', num);
+            }
+        } else {
+            onChange('ageMax', '');
+        }
+    };
+
+    const handleMinAgeKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleMinAgeBlur();
+        }
+    };
+
+    const handleMaxAgeKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleMaxAgeBlur();
+        }
+    };
+
     return (
         <>
             {/* Mobile overlay */}
@@ -199,42 +255,41 @@ const FilterSidebar = ({ filters, onChange, onClear, isMobileOpen, onMobileClose
                     <div>
                         <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3 flex justify-between items-center">
                             Age Range
-                            <span className="text-indigo-700 text-xs font-bold normal-case bg-indigo-100/50 px-2 py-0.5 rounded">
-                                {filters.ageMin || 18} - {filters.ageMax || 60} yrs
-                            </span>
                         </h3>
-                        <div className="px-2 space-y-4">
-                            <div className="flex flex-col gap-4">
-                                <div className="flex-1">
-                                    <label className="text-xs text-slate-800 font-bold mb-1 block">Min Age</label>
-                                    <input
-                                        type="range"
-                                        min="18"
-                                        max="60"
-                                        value={filters.ageMin || 18}
-                                        onChange={(e) => {
-                                            const val = Math.min(Number(e.target.value), (filters.ageMax || 60) - 1);
-                                            onChange('ageMin', val);
-                                        }}
-                                        className="w-full h-1.5 bg-indigo-200/50 rounded-lg appearance-none cursor-pointer"
-                                        style={{ accentColor: '#4f46e5' }}
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <label className="text-xs text-slate-800 font-bold mb-1 block">Max Age</label>
-                                    <input
-                                        type="range"
-                                        min="18"
-                                        max="60"
-                                        value={filters.ageMax || 60}
-                                        onChange={(e) => {
-                                            const val = Math.max(Number(e.target.value), (filters.ageMin || 18) + 1);
-                                            onChange('ageMax', val);
-                                        }}
-                                        className="w-full h-1.5 bg-indigo-200/50 rounded-lg appearance-none cursor-pointer"
-                                        style={{ accentColor: '#4f46e5' }}
-                                    />
-                                </div>
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="text-xs text-slate-800 dark:text-slate-200 font-bold mb-1 block">Min Age</label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="e.g. 18"
+                                    value={minAgeInput}
+                                    onChange={(e) => {
+                                        const cleanVal = e.target.value.replace(/\D/g, '');
+                                        setMinAgeInput(cleanVal);
+                                    }}
+                                    onBlur={handleMinAgeBlur}
+                                    onKeyDown={handleMinAgeKeyDown}
+                                    className="w-full px-3 py-2 text-xs rounded-lg bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:border-indigo-600 dark:focus:border-indigo-500 outline-none font-semibold text-slate-800 dark:text-slate-200"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="text-xs text-slate-800 dark:text-slate-200 font-bold mb-1 block">Max Age</label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="e.g. 60"
+                                    value={maxAgeInput}
+                                    onChange={(e) => {
+                                        const cleanVal = e.target.value.replace(/\D/g, '');
+                                        setMaxAgeInput(cleanVal);
+                                    }}
+                                    onBlur={handleMaxAgeBlur}
+                                    onKeyDown={handleMaxAgeKeyDown}
+                                    className="w-full px-3 py-2 text-xs rounded-lg bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:border-indigo-600 dark:focus:border-indigo-500 outline-none font-semibold text-slate-800 dark:text-slate-200"
+                                />
                             </div>
                         </div>
                     </div>
@@ -336,7 +391,6 @@ const getInitialFilters = () => {
         gender: '',
         ageMin: '',
         ageMax: '',
-        maritalStatus: '',
         workingPlace: '',
         createdInLast15Days: ''
     };
@@ -437,7 +491,6 @@ const Profiles = () => {
             gender: '',
             ageMin: '',
             ageMax: '',
-            maritalStatus: '',
             workingPlace: '',
             createdInLast15Days: ''
         });
