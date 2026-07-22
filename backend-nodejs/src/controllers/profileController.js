@@ -904,10 +904,10 @@ const getPublicStats = async (req, res, next) => {
         const query = { isPublished: true, isActive: { $ne: false }, isDeleted: { $ne: true } };
 
         const total = await Profile.countDocuments(query);
-        const maleBrahmin = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}m', $options: 'i' }, caste: 'Brahmin' });
-        const maleLingayat = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}m', $options: 'i' }, caste: 'Lingayat' });
-        const femaleBrahmin = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}f', $options: 'i' }, caste: 'Brahmin' });
-        const femaleLingayat = await Profile.countDocuments({ ...query, profileCode: { $regex: '^.{3}f', $options: 'i' }, caste: 'Lingayat' });
+        const maleBrahmin = await Profile.countDocuments({ ...query, profileCode: { $regex: '^vlb[m]', $options: 'i' } });
+        const maleLingayat = await Profile.countDocuments({ ...query, profileCode: { $regex: '^vll[m]', $options: 'i' } });
+        const femaleBrahmin = await Profile.countDocuments({ ...query, profileCode: { $regex: '^vlb[f]', $options: 'i' } });
+        const femaleLingayat = await Profile.countDocuments({ ...query, profileCode: { $regex: '^vll[f]', $options: 'i' } });
 
         res.json({
             success: true,
