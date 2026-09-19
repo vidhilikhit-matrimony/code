@@ -6,6 +6,7 @@ import { getAllProfiles, getMyProfile } from '../services/profileService';
 import { logout } from '../redux/slices/authSlice';
 import { toast } from 'sonner';
 import SubscriptionWarningModal from '../components/SubscriptionWarningModal';
+import GlobalNotificationPopup from '../components/GlobalNotificationPopup';
 
 
 // ─── Filter Config ─────────────────────────────────────────────
@@ -414,6 +415,7 @@ const Profiles = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
+    const [myProfile, setMyProfile] = useState(null);
 
     // Initialize state from sessionStorage
     const initialFilters = getInitialFilters();
@@ -447,7 +449,10 @@ const Profiles = () => {
         const checkProfile = async () => {
             try {
                 const res = await getMyProfile();
-                if (res.success && res.data) setHasProfile(true);
+                if (res.success && res.data) {
+                    setHasProfile(true);
+                    setMyProfile(res.data);
+                }
             } catch { /* no profile */ }
         };
         checkProfile();
@@ -508,6 +513,7 @@ const Profiles = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 pt-0">
+            <GlobalNotificationPopup hasProfile={hasProfile} myProfile={myProfile} />
             {/* Top Bar */}
             <div className="bg-white dark:bg-slate-800 sticky top-0 z-30">
                 <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">

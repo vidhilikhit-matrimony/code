@@ -7,5 +7,6 @@ module.exports = {
     ProfileView: require('./ProfileView'),
     SuccessStory: require('./SuccessStory'),
     OTP: require('./OTP'),
-    Plan: require('./Plan')
+    Plan: require('./Plan'),
+    GlobalNotification: require('./GlobalNotification')
 };

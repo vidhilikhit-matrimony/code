@@ -89,6 +89,7 @@ const reportRoutes = require('./routes/report.routes');
 const planRoutes = require('./routes/plan.routes');
 const visitorRoutes = require('./routes/visitor.routes');
 const galleryRoutes = require('./routes/gallery.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -99,6 +100,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/plans', planRoutes);
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 handler
 app.use(notFound);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Shield, LayoutDashboard, Users, FileText, CreditCard, LogOut, FileDown, Image as ImageIcon } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, FileText, CreditCard, LogOut, FileDown, Image as ImageIcon, Bell } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
 import api from '../services/api';
 import AdminStats from '../components/admin/AdminStats';
@@ -12,6 +12,7 @@ import SubscriptionManagement from '../components/admin/SubscriptionManagement';
 import AdminPlanManagement from '../components/admin/AdminPlanManagement';
 import AdminReports from '../components/admin/AdminReports';
 import AdminGalleryManagement from '../components/admin/AdminGalleryManagement';
+import AdminNotificationManagement from '../components/admin/AdminNotificationManagement';
 
 const AdminDashboard = () => {
     const dispatch = useDispatch();
@@ -32,6 +33,7 @@ const AdminDashboard = () => {
         { id: 'plans', label: 'Plans Setup', icon: CreditCard },
         { id: 'reports', label: 'Reports', icon: FileDown },
         { id: 'gallery', label: 'Gallery', icon: ImageIcon },
+        { id: 'notifications', label: 'Notifications', icon: Bell },
     ];
 
     return (
@@ -104,6 +106,8 @@ const AdminDashboard = () => {
                     {activeTab === 'reports' && <AdminReports />}
 
                     {activeTab === 'gallery' && <AdminGalleryManagement />}
+
+                    {activeTab === 'notifications' && <AdminNotificationManagement />}
                 </div>
             </div>
 
